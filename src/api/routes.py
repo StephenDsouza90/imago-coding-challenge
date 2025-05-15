@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Query, Depends
 from fastapi.exceptions import HTTPException
 from elasticsearch.exceptions import BadRequestError
@@ -11,8 +13,18 @@ class Routes:
     This class defines the API routes for the MediaSearch application.
     """
 
-    def __init__(self, get_media_search_service):
+    def __init__(
+        self, get_media_search_service: MediaSearchService, logger: logging.Logger
+    ):
+        """
+        Initialize the Routes class.
+        
+        Args:
+            get_media_search_service (MediaSearchService): The service to handle media search operations.
+            logger (logging.Logger): The logger instance for logging.
+        """
         self.get_media_search_service = get_media_search_service
+        self.logger = logger
         self.router = APIRouter()
         self.setup_routes()
 
@@ -38,25 +50,25 @@ class Routes:
             try:
                 return await media_search_service.search_media(search_request)
             except BadRequestError as bre:
-                print(f"BadRequestError: {bre}")
+                self.logger.error(f"BadRequestError: {bre}")
                 raise HTTPException(
                     status_code=400,
                     detail="The search request was invalid. Please check your parameters and try again.",
                 )
             except KeyError as ke:
-                print(f"KeyError: {ke}")
+                self.logger.error(f"KeyError: {ke}")
                 raise HTTPException(
                     status_code=400,
                     detail="A required field was missing in the search response.",
                 )
             except ValueError as ve:
-                print(f"ValueError: {ve}")
+                self.logger.error(f"ValueError: {ve}")
                 raise HTTPException(
                     status_code=422,
                     detail=str(ve),
                 )
             except Exception as e:
-                print(f"Unhandled Exception: {e}")
+                self.logger.error(f"Unhandled Exception: {e}")
                 raise HTTPException(
                     status_code=500,
                     detail="An unexpected error occurred while processing your request. Please try again later.",

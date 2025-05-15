@@ -1,10 +1,14 @@
+import logging
+import warnings
 from typing import Optional, Union, List
 
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import BadRequestError
-from elastic_transport import ObjectApiResponse
+from elastic_transport import ObjectApiResponse, SecurityWarning
 
 from src.api.models import MediaSearchRequest
+
+warnings.filterwarnings("ignore", category=SecurityWarning)
 
 
 class ElasticsearchClient:
@@ -16,6 +20,7 @@ class ElasticsearchClient:
 
     def __init__(
         self,
+        logger: logging.Logger,
         host: str,
         port: int,
         username: str,
@@ -26,6 +31,16 @@ class ElasticsearchClient:
     ):
         """
         Initialize the Elasticsearch client.
+
+        Args:
+            logger (logging.Logger): The logger instance for logging.
+            host (str): The Elasticsearch host.
+            port (int): The Elasticsearch port.
+            username (str): The Elasticsearch username.
+            password (str): The Elasticsearch password.
+            timeout (int, optional): The request timeout in seconds. Defaults to 30.
+            max_retries (int, optional): The maximum number of retries for failed requests. Defaults to 3.
+            retry_on_timeout (bool, optional): Whether to retry on timeout. Defaults to True.
         """
         self.client = AsyncElasticsearch(
             hosts=[f"{host}:{port}"],
@@ -39,6 +54,7 @@ class ElasticsearchClient:
             retry_on_timeout=retry_on_timeout,
             verify_certs=False,
         )
+        self.logger = logger
 
     async def ping(self) -> bool:
         """
@@ -47,15 +63,14 @@ class ElasticsearchClient:
         Returns:
             bool: True if the client is alive, False otherwise.
         """
-        is_alive = False
 
-        try:
-            result = await self.client.ping()
-            is_alive = bool(result)
-        except Exception:
-            is_alive = False
+        return await self.client.ping()
 
-        return is_alive
+    async def close(self):
+        """
+        Close the Elasticsearch client connection.
+        """
+        await self.client.close()
 
     async def search_media(
         self, search_request: MediaSearchRequest
@@ -70,15 +85,17 @@ class ElasticsearchClient:
             ObjectApiResponse: The response from the Elasticsearch search query.
         """
         body = self._build_search_body(search_request)
+        self.logger.info(f"Elasticsearch search body: {body}")
+
         try:
             response = await self.client.search(index=self.INDEX, body=body)
         except BadRequestError as e:
-            print(f"Elasticsearch BadRequestError: {e}")
+            self.logger.error(f"Elasticsearch BadRequestError: {e.meta}, {e.body}")
             raise BadRequestError(
                 message="The Elasticsearch query was invalid.", meta=e.meta, body=e.body
             )
         except Exception as e:
-            print(f"Elasticsearch search error: {e}")
+            self.logger.error(f"Elasticsearch search error: {e}")
             raise Exception("An error occurred while searching in Elasticsearch.")
         return response
 

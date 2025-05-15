@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from src.es.elasticsearch_client import ElasticsearchClient
@@ -11,21 +12,31 @@ from src.api.models import (
 
 
 class MediaSearchService:
-    def __init__(self, elasticsearch_client: ElasticsearchClient):
+    def __init__(
+        self, elasticsearch_client: ElasticsearchClient, logger: logging.Logger
+    ):
         """
         Initialize the MediaSearchService with an Elasticsearch client.
+
+        Args:
+            elasticsearch_client (ElasticsearchClient): The Elasticsearch client instance.
+            logger (logging.Logger): The logger instance for logging messages.
         """
         self.elasticsearch_client = elasticsearch_client
+        self.logger = logger
 
     async def search_media(
         self, search_request: MediaSearchRequest
     ) -> MediaSearchResponse:
         """
         Search for media based on the provided query parameters.
+
         Args:
             search_request (MediaSearchRequest): The search parameters including query, filters, sorting, pagination, etc.
+
         Returns:
             MediaSearchResponse: A response object containing the search results, total count, and pagination info.
+
         Raises:
             ValueError: If the keyword is not provided or is less than 2 characters long.
         """
@@ -42,17 +53,17 @@ class MediaSearchService:
                 )
                 processed_results.append(hit)
         except ValueError as ve:
-            print(f"Validation error: {ve}")
+            self.logger.error(f"Validation error: {ve}")
             raise ValueError("Invalid input: " + str(ve))
         except KeyError as ke:
-            print(
+            self.logger.error(
                 f"Key error: {ke}. Elasticsearch response: {locals().get('response', None)}"
             )
             raise KeyError(
                 "A required field was missing in the Elasticsearch response."
             )
         except Exception as e:
-            print(f"Unexpected error during media search: {e}")
+            self.logger.error(f"Unexpected error during media search: {e}")
             raise Exception("An unexpected error occurred while searching for media.")
         return MediaSearchResponse(
             total_results=total_results,
@@ -63,50 +74,78 @@ class MediaSearchService:
             has_previous=search_request.page > 1,
         )
 
-    def _validate_search_request(self, search_request: MediaSearchRequest) -> bool:
+    def _validate_search_request(self, search_request: MediaSearchRequest):
         """
         Validate the search parameters.
+
         Args:
             search_request (MediaSearchRequest): The search parameters to validate.
+
         Raises:
             ValueError: If any of the parameters are invalid
         """
         if not search_request.keyword:
+            self.logger.error("Keyword is required.")
             raise ValueError("Keyword is required.")
+
         if len(search_request.keyword) < 2:
+            self.logger.error("Keyword must be at least 2 characters long.")
             raise ValueError("Keyword must be at least 2 characters long.")
+
         if not search_request.fields:
+            self.logger.error("At least one field is required.")
             raise ValueError("At least one field is required.")
+
         valid_fields = Field.__members__.values()
         for field in search_request.fields:
             if field not in valid_fields:
+                self.logger.error(f"Invalid field: {field}")
                 raise ValueError(f"Invalid field: {field}")
+
         if search_request.limit <= 0:
+            self.logger.error("Limit must be a positive integer.")
             raise ValueError("Limit must be a positive integer.")
+
         if search_request.page <= 0:
+            self.logger.error("Page must be a positive integer.")
             raise ValueError("Page must be a positive integer.")
+
         sort_fields = SortField.__members__.values()
         if search_request.sort_by not in sort_fields:
+            self.logger.error(f"Invalid sort field: {search_request.sort_by}")
             raise ValueError(f"Invalid sort field: {search_request.sort_by}")
+
         order_fields = SortOrder.__members__.values()
         if search_request.order_by not in order_fields:
+            self.logger.error(f"Invalid order: {search_request.order_by}")
             raise ValueError(f"Invalid order: {search_request.order_by}")
+
         if search_request.date_from and search_request.date_to:
             if search_request.date_from > search_request.date_to:
+                self.logger.error("date_from must be less than or equal to date_to.")
                 raise ValueError("date_from must be less than or equal to date_to.")
+
         if search_request.date_from and not self._is_valid_date(
             search_request.date_from
         ):
+            self.logger.error("date_from must be in YYYY-MM-DD format.")
             raise ValueError("date_from must be in YYYY-MM-DD format.")
+
         if search_request.date_to and not self._is_valid_date(search_request.date_to):
+            self.logger.error("date_to must be in YYYY-MM-DD format.")
             raise ValueError("date_to must be in YYYY-MM-DD format.")
+
         if search_request.height_min and search_request.height_max:
             if search_request.height_min > search_request.height_max:
+                self.logger.error(
+                    "height_min must be less than or equal to height_max."
+                )
                 raise ValueError("height_min must be less than or equal to height_max.")
+
         if search_request.width_min and search_request.width_max:
             if search_request.width_min > search_request.width_max:
+                self.logger.error("width_min must be less than or equal to width_max.")
                 raise ValueError("width_min must be less than or equal to width_max.")
-        return True
 
     def _is_valid_date(self, date_str: str) -> bool:
         """
@@ -122,6 +161,7 @@ class MediaSearchService:
             datetime.strptime(date_str, "%Y-%m-%d")
             return True
         except ValueError:
+            self.logger.error(f"Invalid date format: {date_str}")
             return False
 
     def _generate_image_url(
