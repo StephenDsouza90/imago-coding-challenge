@@ -26,42 +26,38 @@ class Routes:
 
         @self.router.get("/api/media/search")
         async def search(
-            params: MediaSearchRequest = Query(...),
-            media_search_service: MediaSearchService = Depends(self.get_media_search_service),
+            search_request: MediaSearchRequest = Query(...),
+            media_search_service: MediaSearchService = Depends(
+                self.get_media_search_service
+            ),
         ) -> MediaSearchResponse:
             """
             Search for media based on the provided query parameters.
             This endpoint allows users to search for media items using various filters and sorting options.
-
-            Args:
-                params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
-
-            Returns:
-                MediaSearchResponse: A response object containing the search results, total count, and pagination info.
             """
             try:
-                return await media_search_service.search_service(params)
-
+                return await media_search_service.search_media(search_request)
             except BadRequestError as bre:
+                print(f"BadRequestError: {bre}")
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Bad request: {str(bre)}",
+                    detail="The search request was invalid. Please check your parameters and try again.",
                 )
-
             except KeyError as ke:
+                print(f"KeyError: {ke}")
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Missing required field: {str(ke)}",
+                    detail="A required field was missing in the search response.",
                 )
-
             except ValueError as ve:
+                print(f"ValueError: {ve}")
                 raise HTTPException(
-                    status_code=400,
-                    detail=f"Invalid input: {str(ve)}",
+                    status_code=422,
+                    detail=str(ve),
                 )
-
             except Exception as e:
+                print(f"Unhandled Exception: {e}")
                 raise HTTPException(
                     status_code=500,
-                    detail=f"An error occurred while processing the request: {str(e)}",
+                    detail="An unexpected error occurred while processing your request. Please try again later.",
                 )

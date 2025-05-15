@@ -36,7 +36,9 @@ class Limit(int, Enum):
 class MediaSearchRequest(BaseModel):
     # Required
     keyword: str
-    fields: List[str] = [Field.KEYWORD] # TODO: Add more fields like "fotografen", "datum", etc.
+    fields: List[str] = [
+        Field.KEYWORD
+    ]  # TODO: Add more fields like "fotografen", "datum", etc.
 
     # Optional but defaults
     limit: Limit = Limit.SMALL
