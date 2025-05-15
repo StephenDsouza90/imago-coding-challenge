@@ -10,16 +10,27 @@ class ElasticsearchClient:
 
     INDEX = "imago"
 
-    def __init__(self, host: str, port: int, username: str, password: str):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        timeout: int = 30,
+        max_retries: int = 3,
+        retry_on_timeout: bool = True,
+    ):
         """
         Initialize the Elasticsearch client.
         """
         self.client = Elasticsearch(
             [f"{host}:{port}"],
             http_auth=(username, password),
+            timeout=timeout,
+            max_retries=max_retries,
+            retry_on_timeout=retry_on_timeout,
             verify_certs=False,
         )
-        self.ping()
 
     def ping(self) -> bool:
         """
@@ -35,32 +46,6 @@ class ElasticsearchClient:
 
         return is_alive
 
-    # def check_index(self):
-    #     # Check if the index exists
-    #     if self.es_client.indices.exists(index=self.INDEX):
-    #         print(f"Index '{self.INDEX}' exists")
-
-    #         # Count total documents in the index
-    #         count = self.es_client.count(index=self.INDEX)['count']
-    #         print(f"Total documents in index: {count}")
-    #     else:
-    #         print(f"Index '{self.INDEX}' does NOT exist")
-
-    # def get_sample_documents(self, size=5):
-    #     body = {
-    #         "query": {
-    #             "match_all": {}  # Match all documents
-    #         },
-    #         "size": size
-    #     }
-    #     result = self.es_client.search(index=self.INDEX, body=body)
-    #     sample_docs = result["hits"]["hits"]
-    #     for i, doc in enumerate(sample_docs, 1):
-    #         print(f"\nDocument {i}:")
-    #         print(f"ID: {doc['_id']}")
-    #         print("Content:")
-    #         print(doc['_source'])
-
     def search_by_keyword(self, params: MediaSearchQuery) -> MediaSearchResponse:
         """
         Perform a search based on a keyword.
@@ -73,12 +58,21 @@ class ElasticsearchClient:
         """
         body = {
             "query": {
-                "match": {
-                    "suchtext": params.keyword,
-                }
+                "multi_match": {
+                    "query": params.keyword,
+                    "fields": params.fields,
+                },
             },
-            "size": params.limit,
         }
+
+        if params.limit:
+            body["size"] = params.limit
+
+        if params.page and params.limit:
+            body["from"] = (params.page - 1) * params.limit
+
+        if params.sort_by and params.order_by:
+            body["sort"] = [{params.sort_by: {"order": params.order_by}}]
 
         response = self.client.search(index=self.INDEX, body=body)
 
