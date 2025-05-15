@@ -1,5 +1,5 @@
-from src.es.elasticsearch import ElasticsearchClient
-from src.api.models import MediaSearchQuery
+from src.es.elasticsearch_client import ElasticsearchClient
+from src.api.models import MediaSearchQuery, MediaSearchResponse
 
 
 class MediaSearchService:
@@ -9,7 +9,7 @@ class MediaSearchService:
         """
         self.elasticsearch_client = elasticsearch_client
 
-    def search(self, params: MediaSearchQuery) -> dict:
+    def search(self, params: MediaSearchQuery) -> MediaSearchResponse:
         """
         Search for media based on the provided query parameters.
         This method allows users to search for media items using various filters and sorting options.
@@ -18,19 +18,41 @@ class MediaSearchService:
             params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
 
         Returns:
-            dict: A dictionary containing the search results, total count, and pagination info.
+            MediaSearchResponse: A response object containing the search results, total count, and pagination info.
+
+        Raises:
+            ValueError: If the keyword is not provided or is less than 2 characters long.
         """
-        search_response = self.elasticsearch_client.search_by_keyword(params)
+        if not params.keyword:
+            raise ValueError("Keyword is required.")
 
-        search_results = search_response.to_dict()
+        if len(params.keyword) < 2:
+            raise ValueError("Keyword must be at least 2 characters long.")
 
-        for media_item in search_results["results"]:
-            media_item["media_url"] = self.generate_image_url(
-                media_item["db"], media_item["bildnummer"]
-            )
-            media_item = self.remove_unwanted_fields(media_item)
+        es_response = self.elasticsearch_client.search_by_keyword(params)
 
-        return search_results
+        results = []
+        for hit in es_response.results:
+            db = hit.get("db")
+            bildnummer = hit.get("bildnummer")
+
+            if not db or not bildnummer:
+                # TODO: Add log and handle this case
+                continue
+
+            hit["media_url"] = self.generate_image_url(db, bildnummer)
+            # hit = self.remove_unwanted_fields(hit)
+            results.append(hit)
+
+        return MediaSearchResponse(
+            total_results=es_response.total_results,
+            results=results,
+            page=es_response.page,
+            limit=es_response.limit,
+            has_next=(params.page * params.limit)
+            < es_response.total_results,  # Check if there are more results
+            has_previous=es_response.has_previous,
+        )
 
     def generate_image_url(self, database: str, image_number: str) -> str:
         """
@@ -43,12 +65,14 @@ class MediaSearchService:
         Returns:
             str: The generated URL for the image.
         """
+        # Determine the database code based on the database name
         if database == "stock":
             database_code = "st"
         else:
             # TODO: Check if this is valid
             database_code = "sp"
 
+        # Format the image number to be 10 digits long with leading zeros
         if len(image_number) > 10:
             # TODO: Handle this case
             pass
