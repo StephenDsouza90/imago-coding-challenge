@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
+from fastapi.exceptions import HTTPException
 
-from src.api.models import MediaSearchQuery
+from src.api.models import MediaSearchQuery, MediaSearchResponse
 from src.services.media_service import MediaSearchService
 
 
@@ -23,7 +24,9 @@ class Routes:
             return {"status": "healthy"}
 
         @self.router.get("/api/media/search")
-        async def search_media(params: MediaSearchQuery = Query(...)) -> dict:
+        async def search_media(
+            params: MediaSearchQuery = Query(...),
+        ) -> MediaSearchResponse:
             """
             Search for media based on the provided query parameters.
             This endpoint allows users to search for media items using various filters and sorting options.
@@ -32,7 +35,19 @@ class Routes:
                 params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
 
             Returns:
-                dict: A dictionary containing the search results, total count, and pagination info.
+                MediaSearchResponse: A response object containing the search results, total count, and pagination info.
             """
-            resp = self.media_search_service.search(params)
-            return resp
+            try:
+                return self.media_search_service.search(params)
+
+            except ValueError as ve:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid input: {str(ve)}",
+                )
+
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"An error occurred while processing the request: {str(e)}",
+                )
