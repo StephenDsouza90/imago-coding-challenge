@@ -23,11 +23,21 @@ class MediaSearchService:
         Raises:
             ValueError: If the keyword is not provided or is less than 2 characters long.
         """
+        # Validate keyword
         if not params.keyword:
             raise ValueError("Keyword is required.")
 
+        # Check if the keyword is less than 2 characters
         if len(params.keyword) < 2:
             raise ValueError("Keyword must be at least 2 characters long.")
+
+        # Validate limit
+        if params.limit <= 0:
+            raise ValueError("Limit must be a positive integer.")
+
+        # Validate page
+        if params.page <= 0:
+            raise ValueError("Page must be a positive integer.")
 
         total_results, results = self.elasticsearch_client.search_media(params)
 

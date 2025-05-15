@@ -59,6 +59,7 @@ class ElasticsearchClient:
         Returns:
             Tuple[int, list]: A tuple containing the total number of results and the list of media items.
         """
+
         body = {
             "query": {
                 "bool": {
@@ -114,7 +115,7 @@ class ElasticsearchClient:
 
         # Pagination
         if params.page and params.limit:
-            body["from"] = (params.page - 1) * params.limit
+            body["from"] = (params.page - 1) * params.limit # Page starts from 1 so we need to convert it to 0-based index
 
         # Sorting
         if params.sort_by and params.order_by:
