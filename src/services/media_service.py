@@ -29,12 +29,13 @@ class MediaSearchService:
         if len(params.keyword) < 2:
             raise ValueError("Keyword must be at least 2 characters long.")
 
-        es_response = self.elasticsearch_client.search_by_keyword(params)
+        total_results, results = self.elasticsearch_client.search_media(params)
 
-        results = []
-        for hit in es_response.results:
-            db = hit.get("db")
-            bildnummer = hit.get("bildnummer")
+        processed_results = []
+        for hit in results:
+            source = hit["_source"]
+            db = source.get("db")
+            bildnummer = source.get("bildnummer")
 
             if not db or not bildnummer:
                 # TODO: Add log and handle this case
@@ -42,16 +43,15 @@ class MediaSearchService:
 
             hit["media_url"] = self.generate_image_url(db, bildnummer)
             # hit = self.remove_unwanted_fields(hit)
-            results.append(hit)
+            processed_results.append(hit)
 
         return MediaSearchResponse(
-            total_results=es_response.total_results,
-            results=results,
-            page=es_response.page,
-            limit=es_response.limit,
-            has_next=(params.page * params.limit)
-            < es_response.total_results,  # Check if there are more results
-            has_previous=es_response.has_previous,
+            total_results=total_results,
+            results=processed_results,
+            page=params.page,
+            limit=params.limit,
+            has_next=(params.page * params.limit) < total_results,
+            has_previous=params.page > 1,
         )
 
     def generate_image_url(self, database: str, image_number: str) -> str:

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 from fastapi.exceptions import HTTPException
+from elasticsearch.exceptions import BadRequestError
 
 from src.api.models import MediaSearchQuery, MediaSearchResponse
 from src.services.media_service import MediaSearchService
@@ -39,6 +40,12 @@ class Routes:
             """
             try:
                 return self.media_search_service.search(params)
+
+            except BadRequestError as bre:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Bad request: {str(bre)}",
+                )
 
             except ValueError as ve:
                 raise HTTPException(

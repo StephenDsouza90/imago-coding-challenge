@@ -26,14 +26,22 @@ class Limit(int, Enum):
 
 class MediaSearchQuery(BaseModel):
     # Required
-    keyword: str # Required
+    keyword: str  # Required
+    fields: List[str] = ["suchtext"] # TODO: Add more fields like "fotografen", "datum", etc.
 
     # Defaults
-    fields: List[str] = ["suchtext"]
     limit: Limit = Limit.SMALL
     page: int = 1
     sort_by: SortField = SortField.DATE
     order_by: SortOrder = SortOrder.ASC
+
+    # Range filters
+    date_from: Optional[str] = None  # ISO date string, e.g. '1980-01-01'
+    date_to: Optional[str] = None
+    height_min: Optional[int] = None
+    height_max: Optional[int] = None
+    width_min: Optional[int] = None
+    width_max: Optional[int] = None
 
 
 class MediaSearchResponse(BaseModel):

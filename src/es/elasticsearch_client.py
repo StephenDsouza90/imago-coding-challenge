@@ -1,6 +1,9 @@
-from elasticsearch import Elasticsearch
+from typing import Tuple
 
-from src.api.models import MediaSearchQuery, MediaSearchResponse
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import BadRequestError
+
+from src.api.models import MediaSearchQuery
 
 
 class ElasticsearchClient:
@@ -46,44 +49,86 @@ class ElasticsearchClient:
 
         return is_alive
 
-    def search_by_keyword(self, params: MediaSearchQuery) -> MediaSearchResponse:
+    def search_media(self, params: MediaSearchQuery) -> Tuple[int, list]:
         """
-        Perform a search based on a keyword.
+        Search for media in the Elasticsearch index based on the provided parameters.
 
         Args:
-            params (MediaSearchQuery): The search parameters including the query string.
-
+            params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
+        
         Returns:
-            MediaSearchResponse: An object containing the search results and total count.
+            Tuple[int, list]: A tuple containing the total number of results and the list of media items.
         """
         body = {
             "query": {
-                "multi_match": {
-                    "query": params.keyword,
-                    "fields": params.fields,
+                "bool": {
+                    "must": [
+                        {
+                            "multi_match": {
+                                "query": params.keyword,
+                                "fields": params.fields,
+                            }
+                        }
+                    ],
+                    "filter": []
                 },
             },
         }
 
+        # Date Range Filters
+        if params.date_from or params.date_to:
+            date_range = {}
+            if params.date_from:
+                date_range["gte"] = params.date_from
+            if params.date_to:
+                date_range["lte"] = params.date_to
+            body["query"]["bool"]["filter"].append({
+                "range": {"datum": date_range}
+            })
+
+        # Height Range Filters
+        if params.height_min or params.height_max:
+            height_range = {}
+            if params.height_min is not None:
+                height_range["gte"] = params.height_min
+            if params.height_max is not None:
+                height_range["lte"] = params.height_max
+            body["query"]["bool"]["filter"].append({
+                "range": {"hoehe": height_range}
+            })
+
+        # Width Range Filters
+        if params.width_min or params.width_max:
+            width_range = {}
+            if params.width_min is not None:
+                width_range["gte"] = params.width_min
+            if params.width_max is not None:
+                width_range["lte"] = params.width_max
+            body["query"]["bool"]["filter"].append({
+                "range": {"breite": width_range}
+            })
+
+        # Limit
         if params.limit:
             body["size"] = params.limit
 
+        # Pagination
         if params.page and params.limit:
             body["from"] = (params.page - 1) * params.limit
 
+        # Sorting
         if params.sort_by and params.order_by:
             body["sort"] = [{params.sort_by: {"order": params.order_by}}]
 
-        response = self.client.search(index=self.INDEX, body=body)
+        try:
+            response = self.client.search(index=self.INDEX, body=body)
+
+        except BadRequestError as e:
+            raise BadRequestError(message=f"Bad request: {str(e)}", meta=e.meta, body=e.body)
+
+        except Exception as e:
+            raise Exception(f"Error while searching in Elasticsearch: {str(e)}")
 
         total_results = response["hits"]["total"]["value"]
         results = response["hits"]["hits"]
-
-        return MediaSearchResponse(
-            total_results=total_results,
-            results=[hit["_source"] for hit in results],
-            page=1,
-            limit=len(results),
-            has_next=False,
-            has_previous=False,
-        )
+        return total_results, results
