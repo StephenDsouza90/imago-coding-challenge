@@ -1,10 +1,39 @@
-from pydantic import BaseModel
+from enum import Enum
 from typing import Optional, List
+
+from pydantic import BaseModel
+
+
+class SortField(str, Enum):
+    DATE = "datum"
+    WIDTH = "breite"
+    HEIGHT = "hoehe"
+    PHOTOGRAPHER = "fotografen"
+
+
+class SortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+
+class Limit(int, Enum):
+    SMALL = 5
+    MEDIUM = 10
+    LARGE = 20
+    EXTRA_LARGE = 50
+    MAX = 100
 
 
 class MediaSearchQuery(BaseModel):
-    keyword: Optional[str] = "sunset"  # Default to "sunset"
-    limit: Optional[int] = 5  # Default to 5
+    # Required
+    keyword: str # Required
+
+    # Defaults
+    fields: List[str] = ["suchtext"]
+    limit: Limit = Limit.SMALL
+    page: int = 1
+    sort_by: SortField = SortField.DATE
+    order_by: SortOrder = SortOrder.ASC
 
 
 class MediaSearchResponse(BaseModel):
@@ -14,13 +43,3 @@ class MediaSearchResponse(BaseModel):
     limit: int
     has_next: bool
     has_previous: bool
-
-    def to_dict(self):
-        return {
-            "total_results": self.total_results,
-            "results": self.results,
-            "page": self.page,
-            "limit": self.limit,
-            "has_next": self.has_next,
-            "has_previous": self.has_previous,
-        }
