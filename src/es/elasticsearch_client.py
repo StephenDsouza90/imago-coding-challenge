@@ -1,9 +1,10 @@
-from typing import Tuple
+from typing import Optional, Union, List
 
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import BadRequestError
+from elastic_transport import ObjectApiResponse
 
-from src.api.models import MediaSearchQuery
+from src.api.models import MediaSearchRequest
 
 
 class ElasticsearchClient:
@@ -49,7 +50,7 @@ class ElasticsearchClient:
 
         return is_alive
 
-    def search_media(self, params: MediaSearchQuery) -> Tuple[int, list]:
+    def search_media(self, params: MediaSearchRequest) -> ObjectApiResponse:
         """
         Search for media in the Elasticsearch index based on the provided parameters.
 
@@ -57,9 +58,30 @@ class ElasticsearchClient:
             params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
         
         Returns:
-            Tuple[int, list]: A tuple containing the total number of results and the list of media items.
+            ObjectApiResponse: The response from the Elasticsearch search query.
         """
+        body = self._build_search_body(params)
+        try:
+            response = self.client.search(index=self.INDEX, body=body)
 
+        except BadRequestError as e:
+            raise BadRequestError(message=f"Bad request: {str(e)}", meta=e.meta, body=e.body)
+        
+        except Exception as e:
+            raise Exception(f"Error while searching in Elasticsearch: {str(e)}")
+
+        return response
+
+    def _build_search_body(self, params: MediaSearchRequest) -> dict:
+        """
+        Build the search body for Elasticsearch based on the provided parameters.
+        
+        Args:
+            params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
+        
+        Returns:
+            dict: The search body for Elasticsearch.
+        """
         body = {
             "query": {
                 "bool": {
@@ -71,65 +93,67 @@ class ElasticsearchClient:
                             }
                         }
                     ],
-                    "filter": []
+                    "filter": self._build_filters(params)
                 },
             },
         }
 
-        # Date Range Filters
-        if params.date_from or params.date_to:
-            date_range = {}
-            if params.date_from:
-                date_range["gte"] = params.date_from
-            if params.date_to:
-                date_range["lte"] = params.date_to
-            body["query"]["bool"]["filter"].append({
-                "range": {"datum": date_range}
-            })
-
-        # Height Range Filters
-        if params.height_min or params.height_max:
-            height_range = {}
-            if params.height_min is not None:
-                height_range["gte"] = params.height_min
-            if params.height_max is not None:
-                height_range["lte"] = params.height_max
-            body["query"]["bool"]["filter"].append({
-                "range": {"hoehe": height_range}
-            })
-
-        # Width Range Filters
-        if params.width_min or params.width_max:
-            width_range = {}
-            if params.width_min is not None:
-                width_range["gte"] = params.width_min
-            if params.width_max is not None:
-                width_range["lte"] = params.width_max
-            body["query"]["bool"]["filter"].append({
-                "range": {"breite": width_range}
-            })
-
-        # Limit
         if params.limit:
             body["size"] = params.limit
 
-        # Pagination
         if params.page and params.limit:
-            body["from"] = (params.page - 1) * params.limit # Page starts from 1 so we need to convert it to 0-based index
+            body["from"] = (params.page - 1) * params.limit
 
-        # Sorting
         if params.sort_by and params.order_by:
             body["sort"] = [{params.sort_by: {"order": params.order_by}}]
 
-        try:
-            response = self.client.search(index=self.INDEX, body=body)
+        return body
 
-        except BadRequestError as e:
-            raise BadRequestError(message=f"Bad request: {str(e)}", meta=e.meta, body=e.body)
+    def _build_filters(self, params: MediaSearchRequest) -> List[dict]:
+        """
+        Build the filter part of the Elasticsearch query based on the provided parameters.
+        
+        Args:
+            params (MediaSearchQuery): The search parameters including query, filters, sorting, pagination, etc.
+            
+        Returns:
+            List[dict]: A list of filter dictionaries for Elasticsearch.
+        """
+        filters = []
 
-        except Exception as e:
-            raise Exception(f"Error while searching in Elasticsearch: {str(e)}")
+        date_range = self._build_range_filter("datum", params.date_from, params.date_to)
+        if date_range:
+            filters.append(date_range)
 
-        total_results = response["hits"]["total"]["value"]
-        results = response["hits"]["hits"]
-        return total_results, results
+        height_range = self._build_range_filter("hoehe", params.height_min, params.height_max)
+        if height_range:
+            filters.append(height_range)
+
+        width_range = self._build_range_filter("breite", params.width_min, params.width_max)
+        if width_range:
+            filters.append(width_range)
+
+        return filters
+
+    def _build_range_filter(self, field: str, gte_val: Union[str, int], lte_val: Union[str, int]) -> Optional[dict]:
+        """
+        Build a range filter for Elasticsearch.
+        
+        Args:
+            field (str): The field to filter on.
+            gte_val (Union[str, int]): The minimum value for the range.
+            lte_val (Union[str, int]): The maximum value for the range.
+        
+        Returns:
+            Optional[dict]: The range filter for Elasticsearch.
+        """
+        range_query = {}
+
+        if gte_val:
+            range_query["gte"] = gte_val
+        if lte_val:
+            range_query["lte"] = lte_val
+        if range_query:
+            return {"range": {field: range_query}}
+
+        return None

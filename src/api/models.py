@@ -4,11 +4,20 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 
-class SortField(str, Enum):
+class Field(str, Enum):
+    KEYWORD = "suchtext"
     DATE = "datum"
     WIDTH = "breite"
     HEIGHT = "hoehe"
     PHOTOGRAPHER = "fotografen"
+    IMAGE_NUMBER = "bildnummer"
+
+
+class SortField(str, Enum):
+    DATE = Field.DATE
+    WIDTH = Field.WIDTH
+    HEIGHT = Field.HEIGHT
+    PHOTOGRAPHER = Field.PHOTOGRAPHER
 
 
 class SortOrder(str, Enum):
@@ -24,12 +33,12 @@ class Limit(int, Enum):
     MAX = 100
 
 
-class MediaSearchQuery(BaseModel):
+class MediaSearchRequest(BaseModel):
     # Required
-    keyword: str  # Required
-    fields: List[str] = ["suchtext"] # TODO: Add more fields like "fotografen", "datum", etc.
+    keyword: str
+    fields: List[str] = [Field.KEYWORD] # TODO: Add more fields like "fotografen", "datum", etc.
 
-    # Defaults
+    # Optional but defaults
     limit: Limit = Limit.SMALL
     page: int = 1
     sort_by: SortField = SortField.DATE

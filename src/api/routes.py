@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 from fastapi.exceptions import HTTPException
 from elasticsearch.exceptions import BadRequestError
 
-from src.api.models import MediaSearchQuery, MediaSearchResponse
+from src.api.models import MediaSearchRequest, MediaSearchResponse
 from src.services.media_service import MediaSearchService
 
 
@@ -26,7 +26,7 @@ class Routes:
 
         @self.router.get("/api/media/search")
         async def search_media(
-            params: MediaSearchQuery = Query(...),
+            params: MediaSearchRequest = Query(...),
         ) -> MediaSearchResponse:
             """
             Search for media based on the provided query parameters.
@@ -45,6 +45,12 @@ class Routes:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Bad request: {str(bre)}",
+                )
+
+            except KeyError as ke:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Missing required field: {str(ke)}",
                 )
 
             except ValueError as ve:
