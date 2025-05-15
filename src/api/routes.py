@@ -2,7 +2,7 @@ import logging
 
 from fastapi import APIRouter, Query, Depends
 from fastapi.exceptions import HTTPException
-from elasticsearch.exceptions import BadRequestError
+from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
 from src.api.models import MediaSearchRequest, MediaSearchResponse
 from src.services.media_service import MediaSearchService
@@ -18,7 +18,7 @@ class Routes:
     ):
         """
         Initialize the Routes class.
-        
+
         Args:
             get_media_search_service (MediaSearchService): The service to handle media search operations.
             logger (logging.Logger): The logger instance for logging.
@@ -49,24 +49,42 @@ class Routes:
             """
             try:
                 return await media_search_service.search_media(search_request)
+
             except BadRequestError as bre:
                 self.logger.error(f"BadRequestError: {bre}")
                 raise HTTPException(
                     status_code=400,
                     detail="The search request was invalid. Please check your parameters and try again.",
                 )
+
+            except TransportError as te:
+                self.logger.error(f"TransportError: {te}")
+                raise HTTPException(
+                    status_code=502,
+                    detail="A transport error occurred while processing your request. Please try again later.",
+                )
+            
+            except ConnectionError as ce:
+                self.logger.error(f"ConnectionError: {ce}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="A connection error occurred while processing your request. Please try again later.",
+                )
+            
             except KeyError as ke:
                 self.logger.error(f"KeyError: {ke}")
                 raise HTTPException(
                     status_code=400,
                     detail="A required field was missing in the search response.",
                 )
+
             except ValueError as ve:
                 self.logger.error(f"ValueError: {ve}")
                 raise HTTPException(
                     status_code=422,
                     detail=str(ve),
                 )
+
             except Exception as e:
                 self.logger.error(f"Unhandled Exception: {e}")
                 raise HTTPException(

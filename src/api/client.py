@@ -11,6 +11,9 @@ class FastAPIClient:
         """
         Initializes the FastAPI application with title, description, and version.
         Adds CORS middleware to allow cross-origin requests.
+
+        Args:
+            lifespan (asyncio.Lifespan): Lifespan context manager for the FastAPI app.
         """
         self.app = FastAPI(
             title="MediaSearch",
