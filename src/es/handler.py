@@ -2,78 +2,35 @@ import logging
 import warnings
 from typing import Optional, Union, List
 
-from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 from elastic_transport import ObjectApiResponse, SecurityWarning
 
-from src.api.models import MediaSearchRequest
+from src.api.models import RequestBody
+from src.es.client import ElasticsearchClient
 
 warnings.filterwarnings("ignore", category=SecurityWarning)
 
 
-class ElasticsearchClient:
+class ElasticsearchHandler:
     """
-    A class to interact with the Elasticsearch client.
+    A class to handle Elasticsearch operations.
     """
 
     INDEX = "imago"
 
-    def __init__(
-        self,
-        logger: logging.Logger,
-        host: str,
-        port: int,
-        username: str,
-        password: str,
-        timeout: int = 30,
-        max_retries: int = 3,
-        retry_on_timeout: bool = True,
-    ):
+    def __init__(self, client: ElasticsearchClient, logger: logging.Logger):
         """
         Initialize the Elasticsearch client.
 
         Args:
+            client (ElasticsearchClient): The Elasticsearch client instance.
             logger (logging.Logger): The logger instance for logging.
-            host (str): The Elasticsearch host.
-            port (int): The Elasticsearch port.
-            username (str): The Elasticsearch username.
-            password (str): The Elasticsearch password.
-            timeout (int, optional): The request timeout in seconds. Defaults to 30.
-            max_retries (int, optional): The maximum number of retries for failed requests. Defaults to 3.
-            retry_on_timeout (bool, optional): Whether to retry on timeout. Defaults to True.
         """
-        self.client = AsyncElasticsearch(
-            hosts=[f"{host}:{port}"],
-            http_auth=(username, password),
-            headers={
-                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
-                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8",
-            },
-            request_timeout=timeout,
-            max_retries=max_retries,
-            retry_on_timeout=retry_on_timeout,
-            verify_certs=False,
-        )
+        self.client = client
         self.logger = logger
 
-    async def ping(self) -> bool:
-        """
-        Check if the Elasticsearch client is alive.
-
-        Returns:
-            bool: True if the client is alive, False otherwise.
-        """
-
-        return await self.client.ping()
-
-    async def close(self):
-        """
-        Close the Elasticsearch client connection.
-        """
-        await self.client.close()
-
     async def search_media(
-        self, search_request: MediaSearchRequest
+        self, search_request: RequestBody
     ) -> ObjectApiResponse:
         """
         Search for media in the Elasticsearch index based on the provided parameters.
@@ -93,9 +50,11 @@ class ElasticsearchClient:
         except BadRequestError as bre:
             self.logger.error(f"Elasticsearch BadRequestError: {bre.meta}, {bre.body}")
             raise BadRequestError(
-                message="The Elasticsearch query was invalid.", meta=bre.meta, body=bre.body
+                message="The Elasticsearch query was invalid.",
+                meta=bre.meta,
+                body=bre.body,
             )
-        
+
         except TransportError as te:
             self.logger.error(f"Elasticsearch TransportError: {te.meta}, {te.body}")
             raise TransportError(
@@ -118,7 +77,7 @@ class ElasticsearchClient:
 
         return response
 
-    def _build_search_body(self, search_request: MediaSearchRequest) -> dict:
+    def _build_search_body(self, search_request: RequestBody) -> dict:
         """
         Build the search body for Elasticsearch based on the provided parameters.
 
@@ -157,7 +116,7 @@ class ElasticsearchClient:
 
         return body
 
-    def _build_filters(self, search_request: MediaSearchRequest) -> List[dict]:
+    def _build_filters(self, search_request: RequestBody) -> List[dict]:
         """
         Build the filter part of the Elasticsearch query based on the provided parameters.
 

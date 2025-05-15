@@ -33,7 +33,7 @@ class Limit(int, Enum):
     MAX = 100
 
 
-class MediaSearchRequest(BaseModel):
+class RequestBody(BaseModel):
     # Required
     keyword: str
     fields: List[str] = [
@@ -55,7 +55,7 @@ class MediaSearchRequest(BaseModel):
     width_max: Optional[int] = None
 
 
-class MediaSearchResponse(BaseModel):
+class ResponseBody(BaseModel):
     total_results: int
     results: List[dict]
     page: int

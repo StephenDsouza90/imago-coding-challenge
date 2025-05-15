@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query, Depends
 from fastapi.exceptions import HTTPException
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
-from src.api.models import MediaSearchRequest, MediaSearchResponse
+from src.api.models import RequestBody, ResponseBody
 from src.services.media_service import MediaSearchService
 
 
@@ -38,14 +38,24 @@ class Routes:
 
         @self.router.get("/api/media/search")
         async def search(
-            search_request: MediaSearchRequest = Query(...),
+            search_request: RequestBody = Query(...),
             media_search_service: MediaSearchService = Depends(
                 self.get_media_search_service
             ),
-        ) -> MediaSearchResponse:
+        ) -> ResponseBody:
             """
             Search for media based on the provided query parameters.
             This endpoint allows users to search for media items using various filters and sorting options.
+
+            Args:
+                search_request (RequestBody): The request body containing search parameters.
+                media_search_service (MediaSearchService): The service to handle media search operations.
+
+            Returns:
+                ResponseBody: The response body containing search results.
+            
+            Raises:
+                HTTPException: If there is an error during the search process.
             """
             try:
                 return await media_search_service.search_media(search_request)
@@ -63,14 +73,14 @@ class Routes:
                     status_code=502,
                     detail="A transport error occurred while processing your request. Please try again later.",
                 )
-            
+
             except ConnectionError as ce:
                 self.logger.error(f"ConnectionError: {ce}")
                 raise HTTPException(
                     status_code=503,
                     detail="A connection error occurred while processing your request. Please try again later.",
                 )
-            
+
             except KeyError as ke:
                 self.logger.error(f"KeyError: {ke}")
                 raise HTTPException(

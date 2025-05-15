@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime
 
-from src.es.elasticsearch_client import ElasticsearchClient
+from src.es.handler import ElasticsearchHandler
 from src.api.models import (
-    MediaSearchRequest,
-    MediaSearchResponse,
+    RequestBody,
+    ResponseBody,
     Field,
     SortOrder,
     SortField,
@@ -13,21 +13,21 @@ from src.api.models import (
 
 class MediaSearchService:
     def __init__(
-        self, elasticsearch_client: ElasticsearchClient, logger: logging.Logger
+        self, elasticsearch_handler: ElasticsearchHandler, logger: logging.Logger
     ):
         """
         Initialize the MediaSearchService with an Elasticsearch client.
 
         Args:
-            elasticsearch_client (ElasticsearchClient): The Elasticsearch client instance.
+            elasticsearch_handler (ElasticsearchHandler): The Elasticsearch handler.
             logger (logging.Logger): The logger instance for logging messages.
         """
-        self.elasticsearch_client = elasticsearch_client
+        self.elasticsearch_handler = elasticsearch_handler
         self.logger = logger
 
     async def search_media(
-        self, search_request: MediaSearchRequest
-    ) -> MediaSearchResponse:
+        self, search_request: RequestBody
+    ) -> ResponseBody:
         """
         Search for media based on the provided query parameters.
 
@@ -42,7 +42,7 @@ class MediaSearchService:
         """
         try:
             self._validate_search_request(search_request)
-            response = await self.elasticsearch_client.search_media(search_request)
+            response = await self.elasticsearch_handler.search_media(search_request)
             total_results = response["hits"]["total"]["value"]
             results = response["hits"]["hits"]
             processed_results = []
@@ -52,9 +52,11 @@ class MediaSearchService:
                     source.get("db"), source.get("bildnummer")
                 )
                 processed_results.append(hit)
+
         except ValueError as ve:
             self.logger.error(f"Validation error: {ve}")
             raise ValueError("Invalid input: " + str(ve))
+
         except KeyError as ke:
             self.logger.error(
                 f"Key error: {ke}. Elasticsearch response: {locals().get('response', None)}"
@@ -62,10 +64,12 @@ class MediaSearchService:
             raise KeyError(
                 "A required field was missing in the Elasticsearch response."
             )
+
         except Exception as e:
             self.logger.error(f"Unexpected error during media search: {e}")
             raise Exception("An unexpected error occurred while searching for media.")
-        return MediaSearchResponse(
+
+        return ResponseBody(
             total_results=total_results,
             results=processed_results,
             page=search_request.page,
@@ -74,7 +78,7 @@ class MediaSearchService:
             has_previous=search_request.page > 1,
         )
 
-    def _validate_search_request(self, search_request: MediaSearchRequest):
+    def _validate_search_request(self, search_request: RequestBody):
         """
         Validate the search parameters.
 

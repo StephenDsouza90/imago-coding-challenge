@@ -10,7 +10,8 @@ from fastapi.requests import Request
 from src.api.client import FastAPIClient
 from src.api.routes import Routes
 from src.services.media_service import MediaSearchService
-from src.es.elasticsearch_client import ElasticsearchClient
+from src.es.client import ElasticsearchClient
+from src.es.handler import ElasticsearchHandler
 from src.utils.logger import Logger
 
 
@@ -20,9 +21,6 @@ def init_logger(app=None) -> logging.Logger:
 
     Args:
         app (FastAPI, optional): The FastAPI application instance. Defaults to None.
-
-    Returns:
-        logging.Logger: The configured logger instance.
     """
     logger = Logger().get_logger()
     if app:
@@ -53,9 +51,7 @@ def load_and_validate_env(app: FastAPI) -> Tuple[str, int, str, str]:
     return host, port, username, password
 
 
-def init_es_client(
-    app: FastAPI, host: str, port: int, username: str, password: str
-) -> ElasticsearchClient:
+def init_es_client(app: FastAPI, host: str, port: int, username: str, password: str):
     """
     Initialize the Elasticsearch client and store it in the application state.
 
@@ -67,13 +63,12 @@ def init_es_client(
         password (str): The Elasticsearch password.
 
     Returns:
-        ElasticsearchClient: The initialized Elasticsearch client.
     """
     app.state.logger.info("Initializing Elasticsearch client...")
-    app.state.es_client = ElasticsearchClient(
+    app.state.client = ElasticsearchClient(
         app.state.logger, host, port, username, password
     )
-    return app.state.es_client
+    app.state.handler = ElasticsearchHandler(app.state.client, app.state.logger)
 
 
 async def check_es_connection(app: FastAPI):
@@ -84,30 +79,29 @@ async def check_es_connection(app: FastAPI):
         app (FastAPI): The FastAPI application instance.
     """
     try:
-        if not await app.state.es_client.ping():
+        if not await app.state.client.ping():
             app.state.logger.error("Elasticsearch client is not connected.")
             raise Exception("Elasticsearch client is not connected.")
+
         app.state.logger.info("Elasticsearch client is connected.")
+
     except Exception as e:
         app.state.logger.error(f"Elasticsearch ping failed: {e}")
         raise Exception("Elasticsearch client is not connected.")
 
 
-def init_media_search_service(app: FastAPI) -> MediaSearchService:
+def init_media_search_service(app: FastAPI):
     """
     Initialize the MediaSearchService and store it in the application state.
 
     Args:
         app (FastAPI): The FastAPI application instance.
-
-    Returns:
-        MediaSearchService: The initialized MediaSearchService instance.
     """
     app.state.logger.info("Initializing MediaSearchService...")
-    media_search_service = MediaSearchService(app.state.es_client, app.state.logger)
-    app.state.media_search_service = media_search_service
+    app.state.media_search_service = MediaSearchService(
+        app.state.handler, app.state.logger
+    )
     app.state.logger.info("MediaSearchService initialized.")
-    return media_search_service
 
 
 def create_app() -> FastAPI:
@@ -147,7 +141,7 @@ def create_app() -> FastAPI:
     app = app_instance.app
 
     # Dependency for routes to access the service
-    def get_media_search_service(request: Request):
+    def get_media_search_service(request: Request) -> MediaSearchService:
         return request.app.state.media_search_service
 
     router_instance = Routes(get_media_search_service, logger)
