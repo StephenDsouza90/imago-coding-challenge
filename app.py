@@ -1,8 +1,8 @@
 import uvicorn
 
-from src.main import initialize_app
+from src.main import create_app
 
-app = initialize_app()
+app = create_app()
 
 
 if __name__ == "__main__":

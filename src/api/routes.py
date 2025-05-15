@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from fastapi.exceptions import HTTPException
 from elasticsearch.exceptions import BadRequestError
 
@@ -11,8 +11,8 @@ class Routes:
     This class defines the API routes for the MediaSearch application.
     """
 
-    def __init__(self, media_search_service: MediaSearchService):
-        self.media_search_service = media_search_service
+    def __init__(self, get_media_search_service):
+        self.get_media_search_service = get_media_search_service
         self.router = APIRouter()
         self.setup_routes()
 
@@ -25,8 +25,9 @@ class Routes:
             return {"status": "healthy"}
 
         @self.router.get("/api/media/search")
-        async def search_media(
+        async def search(
             params: MediaSearchRequest = Query(...),
+            media_search_service: MediaSearchService = Depends(self.get_media_search_service),
         ) -> MediaSearchResponse:
             """
             Search for media based on the provided query parameters.
@@ -39,7 +40,7 @@ class Routes:
                 MediaSearchResponse: A response object containing the search results, total count, and pagination info.
             """
             try:
-                return self.media_search_service.search(params)
+                return await media_search_service.search_service(params)
 
             except BadRequestError as bre:
                 raise HTTPException(

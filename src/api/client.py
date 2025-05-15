@@ -7,7 +7,7 @@ class FastAPIClient:
     API class to initialize the FastAPI application.
     """
 
-    def __init__(self):
+    def __init__(self, lifespan):
         """
         Initializes the FastAPI application with title, description, and version.
         Adds CORS middleware to allow cross-origin requests.
@@ -16,6 +16,7 @@ class FastAPIClient:
             title="MediaSearch",
             description="A media search API",
             version="1.0.0",
+            lifespan=lifespan,
         )
         self.app.add_middleware(
             CORSMiddleware,

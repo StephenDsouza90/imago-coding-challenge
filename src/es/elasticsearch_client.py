@@ -1,6 +1,6 @@
 from typing import Optional, Union, List
 
-from elasticsearch import Elasticsearch
+from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import BadRequestError
 from elastic_transport import ObjectApiResponse
 
@@ -27,16 +27,20 @@ class ElasticsearchClient:
         """
         Initialize the Elasticsearch client.
         """
-        self.client = Elasticsearch(
-            [f"{host}:{port}"],
+        self.client = AsyncElasticsearch(
+            hosts=[f"{host}:{port}"],
             http_auth=(username, password),
-            timeout=timeout,
+            headers={
+                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
+                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8"
+            },
+            request_timeout=timeout,
             max_retries=max_retries,
             retry_on_timeout=retry_on_timeout,
             verify_certs=False,
         )
 
-    def ping(self) -> bool:
+    async def ping(self) -> bool:
         """
         Check if the Elasticsearch client is alive.
 
@@ -45,12 +49,15 @@ class ElasticsearchClient:
         """
         is_alive = False
 
-        if self.client.ping():
-            is_alive = True
+        try:
+            result = await self.client.ping()
+            is_alive = bool(result)
+        except Exception as e:
+            is_alive = False
 
         return is_alive
 
-    def search_media(self, params: MediaSearchRequest) -> ObjectApiResponse:
+    async def search_media(self, params: MediaSearchRequest) -> ObjectApiResponse:
         """
         Search for media in the Elasticsearch index based on the provided parameters.
 
@@ -62,7 +69,7 @@ class ElasticsearchClient:
         """
         body = self._build_search_body(params)
         try:
-            response = self.client.search(index=self.INDEX, body=body)
+            response = await self.client.search(index=self.INDEX, body=body)
 
         except BadRequestError as e:
             raise BadRequestError(message=f"Bad request: {str(e)}", meta=e.meta, body=e.body)

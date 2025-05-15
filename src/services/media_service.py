@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from src.es.elasticsearch_client import ElasticsearchClient
-from src.api.models import MediaSearchRequest, MediaSearchResponse, Field, SortOrder
+from src.api.models import MediaSearchRequest, MediaSearchResponse, Field, SortOrder, SortField
 
 
 class MediaSearchService:
@@ -11,7 +11,7 @@ class MediaSearchService:
         """
         self.es = elasticsearch_client
 
-    def search(self, params: MediaSearchRequest) -> MediaSearchResponse:
+    async def search_service(self, params: MediaSearchRequest) -> MediaSearchResponse:
         """
         Search for media based on the provided query parameters.
         This method allows users to search for media items using various filters and sorting options.
@@ -29,7 +29,7 @@ class MediaSearchService:
         try:
             self._validate_params(params)
 
-            response = self.es.search_media(params)
+            response = await self.es.search_media(params)
             total_results = response["hits"]["total"]["value"]
             results = response["hits"]["hits"]
 
@@ -44,8 +44,11 @@ class MediaSearchService:
         except ValueError as ve:
             raise ValueError(f"Invalid input: {str(ve)}")
 
-        except KeyError as e:
-            raise KeyError(f"Key error: {str(e)}. Response: {response}")
+        except KeyError as ke:
+            raise KeyError(f"Key error: {str(ke)}. Response: {response}")
+        
+        except Exception as e:
+            raise Exception(f"Error while searching in Elasticsearch: {str(e)}")
 
         return MediaSearchResponse(
             total_results=total_results,
@@ -93,12 +96,13 @@ class MediaSearchService:
             raise ValueError("Page must be a positive integer.")
 
         # Validate sort_by
-        if params.sort_by not in valid_fields:
+        sort_fields = SortField.__members__.values()
+        if params.sort_by not in sort_fields:
             raise ValueError(f"Invalid sort field: {params.sort_by}")
         
         # Validate order_by
-        sort_fields = SortOrder.__members__.values()
-        if params.order_by not in sort_fields:
+        order_fields = SortOrder.__members__.values()
+        if params.order_by not in order_fields:
             raise ValueError(f"Invalid order: {params.order_by}")
 
         # Validate date range

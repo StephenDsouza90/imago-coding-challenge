@@ -14,10 +14,10 @@ class Field(str, Enum):
 
 
 class SortField(str, Enum):
-    DATE = Field.DATE
-    WIDTH = Field.WIDTH
-    HEIGHT = Field.HEIGHT
-    PHOTOGRAPHER = Field.PHOTOGRAPHER
+    DATE = "datum"
+    WIDTH = "breite"
+    HEIGHT = "hoehe"
+    PHOTOGRAPHER = "fotografen"
 
 
 class SortOrder(str, Enum):
