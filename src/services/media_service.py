@@ -1,9 +1,11 @@
 import logging
+import json
 from datetime import datetime
 
 from elasticsearch.exceptions import BadRequestError
 
 from src.es.handler import ElasticsearchHandler
+from src.redis.handler import RedisHandler
 from src.api.models import (
     RequestBody,
     ResponseBody,
@@ -16,16 +18,21 @@ from src.api.models import (
 
 class MediaSearchService:
     def __init__(
-        self, elasticsearch_handler: ElasticsearchHandler, logger: logging.Logger
+        self,
+        elasticsearch_handler: ElasticsearchHandler,
+        logger: logging.Logger,
+        redis_handler: RedisHandler,
     ):
         """
         Initialize the MediaSearchService with an Elasticsearch client.
 
         Args:
             elasticsearch_handler (ElasticsearchHandler): The Elasticsearch handler.
+            redis_handler (RedisHandler): The Redis handler for caching.
             logger (logging.Logger): The logger instance for logging messages.
         """
         self.elasticsearch_handler = elasticsearch_handler
+        self.redis_handler = redis_handler
         self.logger = logger
 
     async def search_media(self, search_request: RequestBody) -> ResponseBody:
@@ -43,9 +50,18 @@ class MediaSearchService:
         """
         try:
             self._validate_search_request(search_request)
-            response = await self.elasticsearch_handler.search_media(search_request)
-            total_results = response["hits"]["total"]["value"]
-            results = response["hits"]["hits"]
+
+            cache_key = f"media_search:{hash(str(search_request.model_dump()))}"
+            cached_response = self.redis_handler.get_string(cache_key)
+            if cached_response:
+                self.logger.info("Cache hit for search request.")
+                cached_response = json.loads(cached_response)
+                return ResponseBody(**cached_response)
+
+            es_response = await self.elasticsearch_handler.search_media(search_request)
+            total_results = es_response["hits"]["total"]["value"]
+            results = es_response["hits"]["hits"]
+
             processed_results = []
             for hit in results:
                 source = hit["_source"]
@@ -54,7 +70,7 @@ class MediaSearchService:
                 )
                 processed_results.append(hit)
 
-            return ResponseBody(
+            response = ResponseBody(
                 total_results=total_results,
                 results=processed_results,
                 page=search_request.page,
@@ -62,6 +78,13 @@ class MediaSearchService:
                 has_next=(search_request.page * search_request.limit) < total_results,
                 has_previous=search_request.page > 1,
             )
+
+            self.redis_handler.set_string(
+                cache_key, json.dumps(response.model_dump()), expire=3600
+            )
+            self.logger.info("Cache set for search request.")
+
+            return response
 
         except BadRequestError as bre:
             raise BadRequestError(

@@ -135,7 +135,7 @@ def init_media_search_service(app: FastAPI):
     """
     app.state.logger.info("Initializing MediaSearchService...")
     app.state.media_search_service = MediaSearchService(
-        app.state.handler, app.state.logger
+        app.state.handler, app.state.logger, app.state.redis_handler
     )
     app.state.logger.info("MediaSearchService initialized.")
 

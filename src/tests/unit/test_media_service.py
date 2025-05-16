@@ -19,8 +19,18 @@ def mock_elasticsearch_handler():
 
 
 @pytest.fixture
-def service(mock_elasticsearch_handler, mock_logger):
-    return MediaSearchService(mock_elasticsearch_handler, mock_logger)
+def mock_redis_handler():
+    handler = MagicMock()
+    handler.get_string = MagicMock()
+    handler.set_string = MagicMock()
+    return handler
+
+
+@pytest.fixture
+def service(mock_elasticsearch_handler, mock_logger, mock_redis_handler):
+    return MediaSearchService(
+        mock_elasticsearch_handler, mock_logger, mock_redis_handler
+    )
 
 
 def get_test_params() -> RequestBody:
@@ -35,7 +45,10 @@ def get_test_params() -> RequestBody:
 
 
 @pytest.mark.asyncio
-async def test_search_media_success(service, mock_elasticsearch_handler):
+async def test_search_media_success(
+    service, mock_elasticsearch_handler, mock_redis_handler
+):
+    mock_redis_handler.get_string.return_value = None
     mock_response = {
         "hits": {
             "total": {"value": 2},
@@ -59,7 +72,10 @@ async def test_search_media_success(service, mock_elasticsearch_handler):
 
 
 @pytest.mark.asyncio
-async def test_search_media_with_key_error(service, mock_elasticsearch_handler):
+async def test_search_media_with_key_error(
+    service, mock_elasticsearch_handler, mock_redis_handler
+):
+    mock_redis_handler.get_string.return_value = None
     mock_response = {"hits": {}}
     mock_elasticsearch_handler.search_media.return_value = mock_response
     request = get_test_params()
@@ -115,7 +131,7 @@ async def test_search_media_elasticsearch_reserved_characters(service):
     This test checks if the service correctly raises an error when reserved characters are used in the keyword.
     """
     request = get_test_params()
-    request.keyword = "+ - = && || > < ! ( ) { } [ ] ^ \" ~ * ? : \\"
+    request.keyword = '+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\'
     with pytest.raises(ValueError):
         await service.search_media(request)
 
