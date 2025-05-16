@@ -1,6 +1,6 @@
 import logging
 
-from src.redis.client import RedisClient
+from src.cache.client import RedisClient
 
 
 class RedisHandler:

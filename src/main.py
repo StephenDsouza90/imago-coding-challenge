@@ -13,8 +13,8 @@ from src.services.media_service import MediaSearchService
 from src.es.client import ElasticsearchClient
 from src.es.handler import ElasticsearchHandler
 from src.utils.logger import Logger
-from src.redis.client import RedisClient
-from src.redis.handler import RedisHandler
+from src.cache.client import RedisClient
+from src.cache.handler import RedisHandler
 
 
 def init_logger(app=None) -> logging.Logger:

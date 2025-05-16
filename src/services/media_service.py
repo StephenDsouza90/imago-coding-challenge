@@ -5,7 +5,7 @@ from datetime import datetime
 from elasticsearch.exceptions import BadRequestError
 
 from src.es.handler import ElasticsearchHandler
-from src.redis.handler import RedisHandler
+from src.cache.handler import RedisHandler
 from src.api.models import (
     RequestBody,
     ResponseBody,

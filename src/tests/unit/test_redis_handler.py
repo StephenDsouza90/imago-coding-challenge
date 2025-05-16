@@ -1,8 +1,8 @@
 import logging
 from unittest.mock import MagicMock
 
-from src.redis.handler import RedisHandler
-from src.redis.client import RedisClient
+from src.cache.handler import RedisHandler
+from src.cache.client import RedisClient
 
 
 def test_redis_handler_init():

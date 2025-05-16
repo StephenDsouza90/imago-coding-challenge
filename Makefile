@@ -9,3 +9,9 @@ lint:
 
 format:
 	./venv/bin/ruff format
+
+unit-test:
+	./venv/bin/pytest src/tests/unit
+
+e2e-test:
+	./venv/bin/pytest src/tests/e2e

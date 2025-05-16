@@ -1,7 +1,7 @@
 import logging
 from unittest.mock import patch, MagicMock
 
-from src.redis.client import RedisClient
+from src.cache.client import RedisClient
 
 
 def test_redis_client_init():
@@ -16,7 +16,7 @@ def test_redis_client_init():
 
 def test_redis_client_connect_success():
     logger = logging.getLogger("test")
-    with patch("src.redis.client.redis.StrictRedis") as mock_redis:
+    with patch("src.cache.client.redis.StrictRedis") as mock_redis:
         mock_instance = MagicMock()
         mock_redis.return_value = mock_instance
         client = RedisClient(logger, host="localhost", port=6379)
@@ -28,7 +28,7 @@ def test_redis_client_connect_success():
 
 def test_redis_client_disconnect():
     logger = logging.getLogger("test")
-    with patch("src.redis.client.redis.StrictRedis") as mock_redis:
+    with patch("src.cache.client.redis.StrictRedis") as mock_redis:
         mock_instance = MagicMock()
         mock_redis.return_value = mock_instance
         client = RedisClient(logger, host="localhost", port=6379)
