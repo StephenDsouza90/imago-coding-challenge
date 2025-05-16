@@ -43,8 +43,8 @@ class ElasticsearchClient:
             hosts=[f"{host}:{port}"],
             http_auth=(username, password),
             headers={
-                "Accept": "application/vnd.elasticsearch+json; compatible-with-8",
-                "Content-Type": "application/vnd.elasticsearch+json; compatible-with-8",
+                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
+                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8",
             },
             request_timeout=timeout,
             max_retries=max_retries,
