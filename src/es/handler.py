@@ -1,14 +1,11 @@
 import logging
-import warnings
 from typing import Optional, Union, List
 
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
-from elastic_transport import ObjectApiResponse, SecurityWarning
+from elastic_transport import ObjectApiResponse
 
 from src.api.models import RequestBody
 from src.es.client import ElasticsearchClient
-
-warnings.filterwarnings("ignore", category=SecurityWarning)
 
 
 class ElasticsearchHandler:
@@ -39,11 +36,12 @@ class ElasticsearchHandler:
         Returns:
             ObjectApiResponse: The response from the Elasticsearch search query.
         """
-        body = self._build_search_body(search_request)
-        self.logger.info(f"Elasticsearch search body: {body}")
 
         try:
-            response = await self.client.search(index=self.INDEX, body=body)
+            body = self._build_search_body(search_request)
+            self.logger.info(f"Elasticsearch search body: {body}")
+
+            return await self.client.search(index=self.INDEX, body=body)
 
         except BadRequestError as bre:
             self.logger.error(f"Elasticsearch BadRequestError: {bre.meta}, {bre.body}")
@@ -53,27 +51,21 @@ class ElasticsearchHandler:
                 body=bre.body,
             )
 
-        except TransportError as te:
-            self.logger.error(f"Elasticsearch TransportError: {te.meta}, {te.body}")
-            raise TransportError(
-                message="A transport error occurred while searching in Elasticsearch.",
-                meta=te.meta,
-                body=te.body,
-            )
-
         except ConnectionError as ce:
             self.logger.error(f"Elasticsearch ConnectionError: {ce}")
             raise ConnectionError(
                 message="A connection error occurred while searching in Elasticsearch.",
-                meta=ce.meta,
-                body=ce.body,
+            )
+
+        except TransportError as te:
+            self.logger.error(f"Elasticsearch TransportError: {te}")
+            raise TransportError(
+                message="A transport error occurred while searching in Elasticsearch.",
             )
 
         except Exception as e:
             self.logger.error(f"Elasticsearch search error: {e}")
             raise Exception("An error occurred while searching in Elasticsearch.")
-
-        return response
 
     def _build_search_body(self, search_request: RequestBody) -> dict:
         """
