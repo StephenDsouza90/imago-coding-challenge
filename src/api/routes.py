@@ -68,7 +68,7 @@ class Routes:
                     detail="The search request was invalid. Please check your parameters and try again.",
                 )
 
-            except BadRequestError as bre:
+            except BadRequestError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="The search request was invalid. Please check your parameters and try again.",
