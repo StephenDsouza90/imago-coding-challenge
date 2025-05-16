@@ -18,6 +18,17 @@
                 "src/tests/unit"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "E2E Test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "--rootdir=${workspaceFolder}",
+                "src/tests/e2e"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }
