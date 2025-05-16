@@ -8,6 +8,7 @@ from src.api.models import (
     Field,
     SortOrder,
     SortField,
+    Limit,
 )
 
 
@@ -25,9 +26,7 @@ class MediaSearchService:
         self.elasticsearch_handler = elasticsearch_handler
         self.logger = logger
 
-    async def search_media(
-        self, search_request: RequestBody
-    ) -> ResponseBody:
+    async def search_media(self, search_request: RequestBody) -> ResponseBody:
         """
         Search for media based on the provided query parameters.
 
@@ -53,6 +52,15 @@ class MediaSearchService:
                 )
                 processed_results.append(hit)
 
+            return ResponseBody(
+                total_results=total_results,
+                results=processed_results,
+                page=search_request.page,
+                limit=search_request.limit,
+                has_next=(search_request.page * search_request.limit) < total_results,
+                has_previous=search_request.page > 1,
+            )
+
         except ValueError as ve:
             self.logger.error(f"Validation error: {ve}")
             raise ValueError("Invalid input: " + str(ve))
@@ -68,15 +76,6 @@ class MediaSearchService:
         except Exception as e:
             self.logger.error(f"Unexpected error during media search: {e}")
             raise Exception("An unexpected error occurred while searching for media.")
-
-        return ResponseBody(
-            total_results=total_results,
-            results=processed_results,
-            page=search_request.page,
-            limit=search_request.limit,
-            has_next=(search_request.page * search_request.limit) < total_results,
-            has_previous=search_request.page > 1,
-        )
 
     def _validate_search_request(self, search_request: RequestBody):
         """
@@ -96,6 +95,10 @@ class MediaSearchService:
             self.logger.error("Keyword must be at least 2 characters long.")
             raise ValueError("Keyword must be at least 2 characters long.")
 
+        if not all(char.isalnum() or char.isspace() for char in search_request.keyword):
+            self.logger.error("Keyword contains invalid characters.")
+            raise ValueError("Keyword contains invalid characters.")
+
         if not search_request.fields:
             self.logger.error("At least one field is required.")
             raise ValueError("At least one field is required.")
@@ -106,7 +109,7 @@ class MediaSearchService:
                 self.logger.error(f"Invalid field: {field}")
                 raise ValueError(f"Invalid field: {field}")
 
-        if search_request.limit <= 0:
+        if search_request.limit <= 0 or search_request.limit > Limit.MAX:
             self.logger.error("Limit must be a positive integer.")
             raise ValueError("Limit must be a positive integer.")
 
@@ -114,13 +117,11 @@ class MediaSearchService:
             self.logger.error("Page must be a positive integer.")
             raise ValueError("Page must be a positive integer.")
 
-        sort_fields = SortField.__members__.values()
-        if search_request.sort_by not in sort_fields:
+        if search_request.sort_by not in SortField.__members__.values():
             self.logger.error(f"Invalid sort field: {search_request.sort_by}")
             raise ValueError(f"Invalid sort field: {search_request.sort_by}")
 
-        order_fields = SortOrder.__members__.values()
-        if search_request.order_by not in order_fields:
+        if search_request.order_by not in SortOrder.__members__.values():
             self.logger.error(f"Invalid order: {search_request.order_by}")
             raise ValueError(f"Invalid order: {search_request.order_by}")
 
@@ -189,7 +190,6 @@ class MediaSearchService:
         """
         database_code = self._get_database_code(database)
         formatted_image_number = self._get_formatted_image_number(image_number)
-
         return f"https://www.imago-images.de/bild/{database_code}/{formatted_image_number}/{file_prefix}.{file_format}"
 
     def _get_database_code(self, database: str) -> str:
@@ -205,9 +205,7 @@ class MediaSearchService:
         return "st" if database == "stock" else "sp"
 
     def _get_formatted_image_number(self, image_number: str) -> str:
-        if len(image_number) > 10:
-            # TODO: Handle this case
-            pass
+        formatted_image_number = image_number
 
         if len(image_number) == 10:
             formatted_image_number = image_number
@@ -215,30 +213,3 @@ class MediaSearchService:
             formatted_image_number = "0" * (10 - len(image_number)) + image_number
 
         return formatted_image_number
-
-    def _remove_unwanted_fields(self, data: dict) -> dict:
-        """
-        Remove unwanted fields from the data dictionary.
-        This method is used to clean up the data before returning it to the client.
-
-        Args:
-            data (dict): The input data dictionary.
-
-        Returns:
-            dict: The cleaned-up data dictionary.
-        """
-        # TODO : Check if this is needed
-        fields_to_remove = [
-            "bildnummer",
-            "datum",
-            "suchtext",
-            "fotografen",
-            "hoehe",
-            "breite",
-            "db",
-        ]
-
-        for field in fields_to_remove:
-            data.pop(field, None)
-
-        return data

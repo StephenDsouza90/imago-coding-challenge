@@ -7,6 +7,17 @@
             "request": "launch",
             "program": "${workspaceFolder}/app.py",
             "console": "integratedTerminal",
+        },
+        {
+            "name": "Unit Test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "--rootdir=${workspaceFolder}",
+                "src/tests/unit"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }

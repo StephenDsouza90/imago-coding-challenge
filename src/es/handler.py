@@ -29,9 +29,7 @@ class ElasticsearchHandler:
         self.client = client
         self.logger = logger
 
-    async def search_media(
-        self, search_request: RequestBody
-    ) -> ObjectApiResponse:
+    async def search_media(self, search_request: RequestBody) -> ObjectApiResponse:
         """
         Search for media in the Elasticsearch index based on the provided parameters.
 

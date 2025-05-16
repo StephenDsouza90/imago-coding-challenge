@@ -53,7 +53,7 @@ class Routes:
 
             Returns:
                 ResponseBody: The response body containing search results.
-            
+
             Raises:
                 HTTPException: If there is an error during the search process.
             """
