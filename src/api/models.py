@@ -47,7 +47,7 @@ class RequestBody(BaseModel):
     order_by: SortOrder = SortOrder.ASC
 
     # Range filters
-    date_from: Optional[str] = None  # ISO date string, e.g. '1980-01-01'
+    date_from: Optional[str] = None  # ISO date string, e.g. 'YYYY-MM-DD'
     date_to: Optional[str] = None
     height_min: Optional[int] = None
     height_max: Optional[int] = None

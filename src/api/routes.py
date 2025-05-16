@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Query, Depends
+from fastapi import status
 from fastapi.exceptions import HTTPException
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
@@ -63,41 +64,41 @@ class Routes:
             except BadRequestError as bre:
                 self.logger.error(f"BadRequestError: {bre}")
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="The search request was invalid. Please check your parameters and try again.",
-                )
-
-            except TransportError as te:
-                self.logger.error(f"TransportError: {te}")
-                raise HTTPException(
-                    status_code=502,
-                    detail="A transport error occurred while processing your request. Please try again later.",
                 )
 
             except ConnectionError as ce:
                 self.logger.error(f"ConnectionError: {ce}")
                 raise HTTPException(
-                    status_code=503,
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="A connection error occurred while processing your request. Please try again later.",
+                )
+
+            except TransportError as te:
+                self.logger.error(f"TransportError: {te}")
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="A transport error occurred while processing your request. Please try again later.",
                 )
 
             except KeyError as ke:
                 self.logger.error(f"KeyError: {ke}")
                 raise HTTPException(
-                    status_code=400,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail="A required field was missing in the search response.",
                 )
 
             except ValueError as ve:
                 self.logger.error(f"ValueError: {ve}")
                 raise HTTPException(
-                    status_code=422,
+                    status_code=status.HTTP_400_BAD_REQUEST,
                     detail=str(ve),
                 )
 
             except Exception as e:
                 self.logger.error(f"Unhandled Exception: {e}")
                 raise HTTPException(
-                    status_code=500,
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="An unexpected error occurred while processing your request. Please try again later.",
                 )
