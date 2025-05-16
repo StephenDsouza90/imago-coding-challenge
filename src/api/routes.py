@@ -30,33 +30,61 @@ class Routes:
         self.setup_routes()
 
     def setup_routes(self):
-        @self.router.get("/health")
+        @self.router.get(
+            "/health",
+            summary="Health check endpoint",
+            description="Check if the API is running and healthy.",
+            tags=["Health"],
+            response_description="A simple status message.",
+        )
         async def health_check():
             """
-            Health check endpoint to verify if the API is running.
+            Health Check
+            -------------
+            Returns a simple status message to verify that the API is up and running.
+
+            **Returns:**
+                - **200 OK**: `{ "status": "healthy" }`
             """
             return {"status": "healthy"}
 
-        @self.router.get("/api/media/search")
+        @self.router.get(
+            "/api/media/search",
+            summary="Search for media",
+            description="""
+            Search for media items using various filters and sorting options.\n\n
+            **Query Parameters:**
+            - All fields of `RequestBody` can be used as query parameters.
+
+            **Returns:**
+                - **200 OK**: A list of media items matching the search criteria, wrapped in a `ResponseBody`.
+                - **400/422/503/502/500**: Error details if the request is invalid or a server error occurs.
+            """,
+            tags=["Media Search"],
+            response_model=ResponseBody,
+            response_description="A list of media items matching the search criteria.",
+        )
         async def search(
-            search_request: RequestBody = Query(...),
+            search_request: RequestBody = Query(
+                ..., description="Search parameters for media items."
+            ),
             media_search_service: MediaSearchService = Depends(
                 self.get_media_search_service
             ),
         ) -> ResponseBody:
             """
-            Search for media based on the provided query parameters.
-            This endpoint allows users to search for media items using various filters and sorting options.
+            Media Search Endpoint
+            ---------------------
+            Allows users to search for media items by providing various filters and sorting options.\n\n
+            **Args:**
+                - `search_request` (`RequestBody`): The request body containing search parameters.
+                - `media_search_service` (`MediaSearchService`): The service to handle media search operations.
 
-            Args:
-                search_request (RequestBody): The request body containing search parameters.
-                media_search_service (MediaSearchService): The service to handle media search operations.
+            **Returns:**
+                - `ResponseBody`: The response body containing search results.
 
-            Returns:
-                ResponseBody: The response body containing search results.
-
-            Raises:
-                HTTPException: If there is an error during the search process.
+            **Raises:**
+                - `HTTPException`: If there is an error during the search process.
             """
             try:
                 return await media_search_service.search_media(search_request)

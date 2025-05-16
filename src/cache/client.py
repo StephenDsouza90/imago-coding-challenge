@@ -5,7 +5,8 @@ import redis
 
 class RedisClient:
     """
-    A class to interact with the Redis client.
+    RedisClient provides a simple interface for connecting to and interacting with a Redis database.
+    This class manages the connection lifecycle and basic operations for caching and retrieving data from Redis.
     """
 
     def __init__(self, logger: logging.Logger, host: str, port: int, db: int = 0):
@@ -26,15 +27,14 @@ class RedisClient:
 
     def connect(self):
         """
-        Connect to the Redis server.
+        Establish a connection to the Redis server and verify connectivity with a ping.
         """
-
         self.client = redis.StrictRedis(host=self.host, port=self.port, db=self.db)
         self.client.ping()
 
     def disconnect(self):
         """
-        Disconnect from the Redis server.
+        Close the connection to the Redis server if it exists.
         """
         if self.client:
             self.client.close()

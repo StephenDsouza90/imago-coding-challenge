@@ -4,20 +4,21 @@ from typing import Optional, Union, List
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 from elastic_transport import ObjectApiResponse
 
-from src.api.models import RequestBody
+from src.api.models import RequestBody, SortField
 from src.es.client import ElasticsearchClient
 
 
 class ElasticsearchHandler:
     """
-    A class to handle Elasticsearch operations.
+    ElasticsearchHandler provides high-level methods for querying and managing media data in Elasticsearch.
+    This class builds search queries, handles exceptions, and abstracts Elasticsearch operations for the application.
     """
 
     INDEX = "imago"
 
     def __init__(self, client: ElasticsearchClient, logger: logging.Logger):
         """
-        Initialize the Elasticsearch client.
+        Initialize the ElasticsearchHandler with a client and logger.
 
         Args:
             client (ElasticsearchClient): The Elasticsearch client instance.
@@ -28,13 +29,13 @@ class ElasticsearchHandler:
 
     async def search_media(self, search_request: RequestBody) -> ObjectApiResponse:
         """
-        Search for media in the Elasticsearch index based on the provided parameters.
+        Perform a search for media items in Elasticsearch using the provided search parameters.
 
         Args:
             search_request (MediaSearchRequest): The search parameters including query, filters, sorting, pagination, etc.
 
         Returns:
-            ObjectApiResponse: The response from the Elasticsearch search query.
+            ObjectApiResponse: The raw Elasticsearch response object.
         """
 
         try:
@@ -119,19 +120,19 @@ class ElasticsearchHandler:
         filters = []
 
         date_range = self._build_range_filter(
-            "datum", search_request.date_from, search_request.date_to
+            SortField.DATE.value, search_request.date_from, search_request.date_to
         )
         if date_range:
             filters.append(date_range)
 
         height_range = self._build_range_filter(
-            "hoehe", search_request.height_min, search_request.height_max
+            SortField.HEIGHT.value, search_request.height_min, search_request.height_max
         )
         if height_range:
             filters.append(height_range)
 
         width_range = self._build_range_filter(
-            "breite", search_request.width_min, search_request.width_max
+            SortField.WIDTH.value, search_request.width_min, search_request.width_max
         )
         if width_range:
             filters.append(width_range)

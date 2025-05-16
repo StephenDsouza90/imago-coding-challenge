@@ -17,6 +17,11 @@ from src.api.models import (
 
 
 class MediaSearchService:
+    """
+    MediaSearchService coordinates search operations between Elasticsearch and Redis cache.
+    This service validates input, manages caching, and transforms Elasticsearch results into API responses.
+    """
+
     def __init__(
         self,
         elasticsearch_handler: ElasticsearchHandler,
@@ -24,7 +29,7 @@ class MediaSearchService:
         redis_handler: RedisHandler,
     ):
         """
-        Initialize the MediaSearchService with an Elasticsearch client.
+        Initialize the MediaSearchService with handlers for Elasticsearch and Redis, and a logger.
 
         Args:
             elasticsearch_handler (ElasticsearchHandler): The Elasticsearch handler.
@@ -37,7 +42,8 @@ class MediaSearchService:
 
     async def search_media(self, search_request: RequestBody) -> ResponseBody:
         """
-        Search for media based on the provided query parameters.
+        Search for media items using the provided query parameters.
+        Handles validation, caching, and result transformation.
 
         Args:
             search_request (MediaSearchRequest): The search parameters including query, filters, sorting, pagination, etc.

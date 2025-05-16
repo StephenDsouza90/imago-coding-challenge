@@ -1,11 +1,13 @@
 import logging
+from typing import Optional
 
 from src.cache.client import RedisClient
 
 
 class RedisHandler:
     """
-    A class to handle Redis operations.
+    RedisHandler provides high-level methods for interacting with Redis, such as setting and getting string values.
+    This class abstracts away direct Redis commands and provides a clean interface for caching logic in the application.
     """
 
     def __init__(self, client: RedisClient, logger: logging.Logger):
@@ -21,7 +23,8 @@ class RedisHandler:
 
     def set_string(self, key: str, value: str, expire: int = 3600):
         """
-        Set a key-value pair in Redis where the value is a string.
+        Store a string value in Redis with an optional expiration time (default: 1 hour).
+        Overwrites any existing value for the given key.
 
         Args:
             key (str): The key to set.
@@ -30,14 +33,15 @@ class RedisHandler:
         """
         self.client.client.set(key, value, ex=expire)
 
-    def get_string(self, key: str) -> str:
+    def get_string(self, key: str) -> Optional[str]:
         """
-        Get a string from Redis by key.
+        Retrieve a string value from Redis by key.
+        Returns None if the key does not exist.
 
         Args:
             key (str): The key to get.
 
         Returns:
-            str: The value associated with the key.
+            Optional[str]: The value associated with the key.
         """
         return self.client.client.get(key)

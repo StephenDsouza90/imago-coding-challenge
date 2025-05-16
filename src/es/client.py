@@ -10,7 +10,8 @@ warnings.filterwarnings("ignore", category=SecurityWarning)
 
 class ElasticsearchClient:
     """
-    A class to interact with the Elasticsearch client.
+    ElasticsearchClient manages asynchronous connections and requests to an Elasticsearch cluster.
+    It handles authentication, connection settings, and provides a base for executing search and index operations.
     """
 
     def __init__(
@@ -25,7 +26,8 @@ class ElasticsearchClient:
         retry_on_timeout: bool = True,
     ):
         """
-        Initialize the Elasticsearch client.
+        Set up the AsyncElasticsearch client with connection and authentication details.
+        Disables SSL certificate verification for development.
 
         Args:
             logger (logging.Logger): The logger instance for logging.
@@ -41,8 +43,8 @@ class ElasticsearchClient:
             hosts=[f"{host}:{port}"],
             http_auth=(username, password),
             headers={
-                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
-                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8",
+                "Accept": "application/vnd.elasticsearch+json; compatible-with-8",
+                "Content-Type": "application/vnd.elasticsearch+json; compatible-with-8",
             },
             request_timeout=timeout,
             max_retries=max_retries,

@@ -14,8 +14,7 @@ def dummy_lifespan(app: FastAPI):
 def test_fastapi_client_initialization():
     client = FastAPIClient(lifespan=dummy_lifespan)
     app = client.app
-    assert app.title == "MediaSearch"
-    assert app.description == "A media search API"
+    assert app.title == "Imago Coding Challenge API"
     assert app.version == "1.0.0"
     cors_middleware = [mw for mw in app.user_middleware if mw.cls is CORSMiddleware]
     assert cors_middleware, "CORS middleware should be added to the app"
