@@ -1,6 +1,8 @@
 import logging
 from datetime import datetime
 
+from elasticsearch.exceptions import BadRequestError
+
 from src.es.handler import ElasticsearchHandler
 from src.api.models import (
     RequestBody,
@@ -61,6 +63,13 @@ class MediaSearchService:
                 has_previous=search_request.page > 1,
             )
 
+        except BadRequestError as bre:
+            raise BadRequestError(
+                message="The Elasticsearch query was invalid.",
+                meta=bre.meta,
+                body=bre.body,
+            )
+
         except ValueError as ve:
             self.logger.error(f"Validation error: {ve}")
             raise ValueError("Invalid input: " + str(ve))
@@ -109,7 +118,7 @@ class MediaSearchService:
                 self.logger.error(f"Invalid field: {field}")
                 raise ValueError(f"Invalid field: {field}")
 
-        if search_request.limit <= 0 or search_request.limit > Limit.MAX:
+        if search_request.limit <= 0 or search_request.limit > Limit.MAX.value:
             self.logger.error("Limit must be a positive integer.")
             raise ValueError("Limit must be a positive integer.")
 

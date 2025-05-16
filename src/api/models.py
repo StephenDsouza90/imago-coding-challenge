@@ -6,18 +6,13 @@ from pydantic import BaseModel
 
 class Field(str, Enum):
     KEYWORD = "suchtext"
-    DATE = "datum"
-    WIDTH = "breite"
-    HEIGHT = "hoehe"
     PHOTOGRAPHER = "fotografen"
-    IMAGE_NUMBER = "bildnummer"
 
 
 class SortField(str, Enum):
     DATE = "datum"
     WIDTH = "breite"
     HEIGHT = "hoehe"
-    PHOTOGRAPHER = "fotografen"
 
 
 class SortOrder(str, Enum):
@@ -36,12 +31,10 @@ class Limit(int, Enum):
 class RequestBody(BaseModel):
     # Required
     keyword: str
-    fields: List[str] = [
-        Field.KEYWORD
-    ]  # TODO: Add more fields like "fotografen", "datum", etc.
+    fields: List[str] = [Field.KEYWORD]
 
     # Optional but defaults
-    limit: Limit = Limit.SMALL
+    limit: Limit = Limit.SMALL  # TODO : Should be between 1 and 100
     page: int = 1
     sort_by: SortField = SortField.DATE
     order_by: SortOrder = SortOrder.ASC

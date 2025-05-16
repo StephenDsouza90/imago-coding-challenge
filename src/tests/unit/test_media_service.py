@@ -24,6 +24,16 @@ def service(mock_elasticsearch_handler, mock_logger):
     return MediaSearchService(mock_elasticsearch_handler, mock_logger)
 
 
+def get_test_params() -> RequestBody:
+    return RequestBody(
+        keyword="test",
+        fields=[Field.KEYWORD.value],
+        limit=Limit.MEDIUM.value,
+        page=1,
+        sort_by=SortField.DATE.value,
+        order_by=SortOrder.ASC.value,
+    )
+
 @pytest.mark.asyncio
 async def test_search_media_success(service, mock_elasticsearch_handler):
     mock_response = {
@@ -36,14 +46,7 @@ async def test_search_media_success(service, mock_elasticsearch_handler):
         }
     }
     mock_elasticsearch_handler.search_media.return_value = mock_response
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
     response = await service.search_media(request)
     assert response.total_results == 2
     assert len(response.results) == 2
@@ -59,42 +62,23 @@ async def test_search_media_success(service, mock_elasticsearch_handler):
 async def test_search_media_with_key_error(service, mock_elasticsearch_handler):
     mock_response = {"hits": {}}
     mock_elasticsearch_handler.search_media.return_value = mock_response
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
     with pytest.raises(KeyError):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_keyword(service):
-    request = RequestBody(
-        keyword="",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.keyword = ""
     with pytest.raises(ValueError):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_field(service):
-    request = RequestBody(
-        keyword="test",
-        fields=["InvalidField"],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.fields = ["Invalid Field"]
     with pytest.raises(ValueError):
         await service.search_media(request)
 
@@ -105,14 +89,8 @@ async def test_search_media_elasticsearch_wildcard_injection(service):
     Wildcard injection is a common attack in Elasticsearch queries.
     This test checks if the service correctly raises an error when a wildcard is used in the keyword.
     """
-    request = RequestBody(
-        keyword="*",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.keyword = "*"
     with pytest.raises(ValueError):
         await service.search_media(request)
 
@@ -124,14 +102,8 @@ async def test_search_media_elasticsearch_query_dsl_injection(service):
 
     This test checks if the service correctly raises an error when a query DSL is used in the keyword.
     """
-    request = RequestBody(
-        keyword='{ "match_all": {} }',
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.keyword = '{ "query": { "match_all": {} } }'
     with pytest.raises(ValueError):
         await service.search_media(request)
 
@@ -142,30 +114,17 @@ async def test_search_media_elasticsearch_reserved_characters(service):
     Reserved characters in Elasticsearch queries can lead to unexpected behavior.
     This test checks if the service correctly raises an error when reserved characters are used in the keyword.
     """
-    request = RequestBody(
-        keyword='+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\',
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.keyword = "+ - = && || > < ! ( ) { } [ ] ^ \" ~ * ? : \\"
     with pytest.raises(ValueError):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_height_range(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-        height_min=2000,
-        height_max=1000,
-    )
+    request = get_test_params()
+    request.height_min = 2000
+    request.height_max = 1000
     with pytest.raises(
         ValueError, match="height_min must be less than or equal to height_max"
     ):
@@ -174,16 +133,9 @@ async def test_search_media_invalid_height_range(service):
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_width_range(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-        width_min=2000,
-        width_max=1000,
-    )
+    request = get_test_params()
+    request.width_min = 2000
+    request.width_max = 1000
     with pytest.raises(
         ValueError, match="width_min must be less than or equal to width_max"
     ):
@@ -192,46 +144,25 @@ async def test_search_media_invalid_width_range(service):
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_from_format(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-        date_from="2024-13-01",
-    )
+    request = get_test_params()
+    request.date_from = "2024-01-32"
     with pytest.raises(ValueError, match="date_from must be in YYYY-MM-DD format"):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_to_format(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-        date_to="2024-02-30",
-    )
+    request = get_test_params()
+    request.date_to = "2024-02-32"
     with pytest.raises(ValueError, match="date_to must be in YYYY-MM-DD format"):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_range(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=1,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-        date_from="2024-01-10",
-        date_to="2024-01-01",
-    )
+    request = get_test_params()
+    request.date_from = "2024-01-10"
+    request.date_to = "2024-01-01"
     with pytest.raises(
         ValueError, match="date_from must be less than or equal to date_to"
     ):
@@ -239,94 +170,59 @@ async def test_search_media_invalid_date_range(service):
 
 
 @pytest.mark.asyncio
-async def test_search_media_invalid_limit_zero():
-    with pytest.raises(ValidationError):
-        RequestBody(
-            keyword="test",
-            fields=[Field.KEYWORD],
-            limit=0,
-            page=1,
-            sort_by=SortField.DATE,
-            order_by=SortOrder.ASC,
-        )
+async def test_search_media_invalid_limit_zero(service):
+    request = get_test_params()
+    request.limit = 0
+    with pytest.raises(ValueError, match="Limit must be a positive integer"):
+        await service.search_media(request)
 
 
 @pytest.mark.asyncio
-async def test_search_media_invalid_limit_negative():
-    with pytest.raises(ValidationError):
-        RequestBody(
-            keyword="test",
-            fields=[Field.KEYWORD],
-            limit=-5,
-            page=1,
-            sort_by=SortField.DATE,
-            order_by=SortOrder.ASC,
-        )
+async def test_search_media_invalid_limit_negative(service):
+    request = get_test_params()
+    request.limit = -5
+    with pytest.raises(ValueError, match="Limit must be a positive integer"):
+        await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_page_zero(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=0,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.page = 0
     with pytest.raises(ValueError, match="Page must be a positive integer"):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
 async def test_search_media_invalid_page_negative(service):
-    request = RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD],
-        limit=10,
-        page=-2,
-        sort_by=SortField.DATE,
-        order_by=SortOrder.ASC,
-    )
+    request = get_test_params()
+    request.page = -2
     with pytest.raises(ValueError, match="Page must be a positive integer"):
         await service.search_media(request)
 
 
 @pytest.mark.asyncio
-async def test_search_media_over_max_limit():
-    with pytest.raises(ValidationError):
-        RequestBody(
-            keyword="test",
-            fields=[Field.KEYWORD],
-            limit=Limit.MAX + 1,
-            page=1,
-            sort_by=SortField.DATE,
-            order_by=SortOrder.ASC,
-        )
+async def test_search_media_over_max_limit(service):
+    request = get_test_params()
+    request.limit = Limit.MAX.value + 1
+    with pytest.raises(ValueError, match="Limit must be a positive integer"):
+        await service.search_media(request)
 
 
-def test_request_body_invalid_sort():
-    with pytest.raises(ValidationError):
-        RequestBody(
-            keyword="test",
-            fields=[Field.KEYWORD],
-            limit=10,
-            page=1,
-            sort_by="invalid_sort",
-            order_by=SortOrder.ASC,
-        )
+@pytest.mark.asyncio
+async def test_request_body_invalid_sort(service):
+    request = get_test_params()
+    request.sort_by = "invalid_sort"
+    with pytest.raises(ValueError, match="Invalid sort field: invalid_sort"):
+        await service.search_media(request)
 
 
-def test_request_body_invalid_order():
-    with pytest.raises(ValidationError):
-        RequestBody(
-            keyword="test",
-            fields=[Field.KEYWORD],
-            limit=10,
-            page=1,
-            sort_by=SortField.DATE,
-            order_by="invalid_order",
-        )
+@pytest.mark.asyncio
+async def test_request_body_invalid_order(service):
+    request = get_test_params()
+    request.order_by = "invalid_order"
+    with pytest.raises(ValueError, match="Invalid order: invalid_order"):
+        await service.search_media(request)
 
 
 def test_generate_image_url(service):

@@ -2,9 +2,27 @@ import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
 from src.es.handler import ElasticsearchHandler
-from src.api.models import RequestBody
+from src.api.models import RequestBody, Field, Limit, SortField, SortOrder
+
+
+def get_test_params() -> RequestBody:
+    return RequestBody(
+        keyword="test",
+        fields=[Field.KEYWORD.value],
+        limit=Limit.MEDIUM.value,
+        page=1,
+        sort_by=SortField.DATE.value,
+        order_by=SortOrder.ASC.value,
+        date_from=None,
+        date_to=None,
+        height_min=None,
+        height_max=None,
+        width_min=None,
+        width_max=None,
+    )
 
 
 @pytest.mark.asyncio
@@ -14,20 +32,7 @@ async def test_search_media_success():
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
     mock_response = {"hits": {"hits": [1, 2, 3]}}
     mock_client.search = AsyncMock(return_value=mock_response)
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=10,
-        page=1,
-        sort_by="datum",
-        order_by="asc",
-        date_from=None,
-        date_to=None,
-        height_min=None,
-        height_max=None,
-        width_min=None,
-        width_max=None,
-    )
+    req = get_test_params()
     result = await handler.search_media(req)
     assert result == mock_response
 
@@ -37,22 +42,7 @@ async def test_search_media_bad_request_error():
     mock_client = MagicMock()
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
-    from elasticsearch.exceptions import BadRequestError
-
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=10,
-        page=1,
-        sort_by="datum",
-        order_by="asc",
-        date_from=None,
-        date_to=None,
-        height_min=None,
-        height_max=None,
-        width_min=None,
-        width_max=None,
-    )
+    req = get_test_params()
     error = BadRequestError(message="bad request", meta=None, body=None)
     mock_client.search = AsyncMock(side_effect=error)
     with pytest.raises(BadRequestError):
@@ -64,22 +54,7 @@ async def test_search_media_transport_error():
     mock_client = MagicMock()
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
-    from elasticsearch.exceptions import TransportError
-
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=10,
-        page=1,
-        sort_by="datum",
-        order_by="asc",
-        date_from=None,
-        date_to=None,
-        height_min=None,
-        height_max=None,
-        width_min=None,
-        width_max=None,
-    )
+    req = get_test_params()
     error = TransportError(
         message="A transport error occurred while searching in Elasticsearch."
     )
@@ -93,22 +68,7 @@ async def test_search_media_connection_error():
     mock_client = MagicMock()
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
-    from elasticsearch.exceptions import ConnectionError
-
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=10,
-        page=1,
-        sort_by="datum",
-        order_by="asc",
-        date_from=None,
-        date_to=None,
-        height_min=None,
-        height_max=None,
-        width_min=None,
-        width_max=None,
-    )
+    req = get_test_params()
     error = ConnectionError(message="connection error")
     mock_client.search = AsyncMock(side_effect=error)
     with pytest.raises(ConnectionError):
@@ -120,20 +80,7 @@ async def test_search_media_generic_exception():
     mock_client = MagicMock()
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=10,
-        page=1,
-        sort_by="datum",
-        order_by="asc",
-        date_from=None,
-        date_to=None,
-        height_min=None,
-        height_max=None,
-        width_min=None,
-        width_max=None,
-    )
+    req = get_test_params()
     mock_client.search = AsyncMock(side_effect=Exception("unexpected error"))
     with pytest.raises(Exception):
         await handler.search_media(req)
@@ -143,20 +90,15 @@ def test_build_search_body():
     mock_client = MagicMock()
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
-    req = RequestBody(
-        keyword="test",
-        fields=["suchtext"],
-        limit=5,
-        page=2,
-        sort_by="datum",
-        order_by="asc",
-        date_from="2023-01-01",
-        date_to="2023-12-31",
-        height_min=100,
-        height_max=200,
-        width_min=50,
-        width_max=150,
-    )
+    req = get_test_params()
+    req.limit = Limit.SMALL.value
+    req.page = 2
+    req.date_from = "2023-01-01"
+    req.date_to = "2023-12-31"
+    req.height_min = 100
+    req.height_max = 200
+    req.width_min = 50
+    req.width_max = 150
     body = handler._build_search_body(req)
     assert body["size"] == 5
     assert body["from"] == 5
