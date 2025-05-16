@@ -1,4 +1,3 @@
-import uvicorn
 
 from src.main import create_app
 
