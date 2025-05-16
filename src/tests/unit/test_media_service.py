@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from pydantic import ValidationError
 
 from src.services.media_service import MediaSearchService
 from src.api.models import RequestBody, Field, SortOrder, SortField, Limit
@@ -33,6 +32,7 @@ def get_test_params() -> RequestBody:
         sort_by=SortField.DATE.value,
         order_by=SortOrder.ASC.value,
     )
+
 
 @pytest.mark.asyncio
 async def test_search_media_success(service, mock_elasticsearch_handler):
