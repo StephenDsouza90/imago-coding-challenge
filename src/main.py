@@ -1,11 +1,11 @@
 import os
 import logging
 from typing import AsyncGenerator, Tuple
-from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.requests import Request
+from dotenv import load_dotenv
 
 from src.api.client import FastAPIClient
 from src.api.routes import Routes
@@ -13,6 +13,8 @@ from src.services.media_service import MediaSearchService
 from src.es.client import ElasticsearchClient
 from src.es.handler import ElasticsearchHandler
 from src.utils.logger import Logger
+from src.redis.client import RedisClient
+from src.redis.handler import RedisHandler
 
 
 def init_logger(app=None) -> logging.Logger:
@@ -28,7 +30,7 @@ def init_logger(app=None) -> logging.Logger:
     return logger
 
 
-def load_and_validate_env(app: FastAPI) -> Tuple[str, int, str, str]:
+def load_and_validate_es_env(app: FastAPI) -> Tuple[str, int, str, str]:
     """
     Load and validate environment variables for Elasticsearch configuration.
 
@@ -51,6 +53,25 @@ def load_and_validate_env(app: FastAPI) -> Tuple[str, int, str, str]:
     return host, port, username, password
 
 
+def load_and_validate_redis_env(app: FastAPI) -> Tuple[str, int]:
+    """
+    Load and validate environment variables for Redis configuration.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+
+    Returns:
+        tuple: A tuple containing the host and port for Redis.
+    """
+    load_dotenv()
+    host = os.getenv("REDIS_HOST")
+    port = int(os.getenv("REDIS_PORT"))
+    if not all([host, port]):
+        app.state.logger.error("Missing one or more Redis environment variables.")
+        raise ValueError("Missing one or more Redis environment variables.")
+    return host, port
+
+
 def init_es_client(app: FastAPI, host: str, port: int, username: str, password: str):
     """
     Initialize the Elasticsearch client and store it in the application state.
@@ -69,6 +90,21 @@ def init_es_client(app: FastAPI, host: str, port: int, username: str, password: 
         app.state.logger, host, port, username, password
     )
     app.state.handler = ElasticsearchHandler(app.state.client, app.state.logger)
+
+
+def init_redis_client(app: FastAPI, host: str, port: int):
+    """
+    Initialize the Redis client and store it in the application state.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+    """
+    app.state.logger.info("Initializing Redis client...")
+    app.state.redis_client = RedisClient(app.state.logger, host, port)
+    app.state.redis_client.connect()
+    app.state.logger.info("Redis client initialized.")
+    app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
+    app.state.logger.info("Redis handler initialized.")
 
 
 async def check_es_connection(app: FastAPI):
@@ -119,11 +155,17 @@ def create_app() -> FastAPI:
         logger.info("Starting up the application...")
 
         # Load and validate environment variables
-        host, port, username, password = load_and_validate_env(app)
+        host, port, username, password = load_and_validate_es_env(app)
 
         # Initialize Elasticsearch client
         init_es_client(app, host, port, username, password)
         await check_es_connection(app)
+
+        # Load and validate Redis environment variables
+        redis_host, redis_port = load_and_validate_redis_env(app)
+
+        # Initialize Redis client
+        init_redis_client(app, redis_host, redis_port)
 
         # Initialize MediaSearchService
         init_media_search_service(app)
