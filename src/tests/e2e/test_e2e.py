@@ -1,6 +1,8 @@
 import pytest
 import httpx
 
+from src.api.models import Field, Match, SortField, SortOrder, Limit
+
 BASE_URL = "http://0.0.0.0:8000"
 
 
@@ -16,12 +18,12 @@ async def test_health_check():
 async def test_media_search_success():
     params = {
         "keyword": "northern lights",
-        "fields": ["suchtext"],
-        "match": ["phrase"],
-        "limit": 5,
+        "fields": [Field.KEYWORD.value, Field.PHOTOGRAPHER.value],
+        "match": [Match.PHRASE.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -40,11 +42,10 @@ async def test_media_search_success():
 async def test_media_search_success_with_date():
     params = {
         "keyword": "sunshine",
-        "fields": "suchtext",
-        "limit": 5,
-        "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "fields": [Field.KEYWORD.value, Field.PHOTOGRAPHER.value],
+        "limit": Limit.SMALL.value,
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
         "date_from": "2023-01-01",
         "date_to": "2023-12-31",
     }
@@ -65,11 +66,11 @@ async def test_media_search_success_with_date():
 async def test_media_search_success_with_invalid_date():
     params = {
         "keyword": "sunset",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.HEIGHT.value,
+        "order_by": SortOrder.DESC.value,
         "date_from": "2023-13-01",
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
@@ -84,11 +85,11 @@ async def test_media_search_success_with_invalid_date():
 async def test_media_search_success_with_height_and_width():
     params = {
         "keyword": "mercedes",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
         "date_from": "2023-01-01",
         "date_to": "2024-12-31",
         "height_min": 1000,
@@ -113,11 +114,11 @@ async def test_media_search_success_with_height_and_width():
 async def test_media_search_success_with_invalid_height_and_width():
     params = {
         "keyword": "mercedes",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
         "date_from": "2023-01-01",
         "date_to": "2024-12-31",
         "height_min": 3000,
@@ -137,11 +138,11 @@ async def test_media_search_success_with_invalid_height_and_width():
 async def test_media_search_missing_keyword():
     params = {
         "keyword": "",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -153,11 +154,11 @@ async def test_media_search_missing_keyword():
 async def test_media_search_invalid_field():
     params = {
         "keyword": "sunset",
-        "fields": "invalid field",
-        "limit": 5,
+        "fields": ["invalid field"],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -170,11 +171,11 @@ async def test_media_search_invalid_field():
 async def test_media_search_invalid_limit():
     params = {
         "keyword": "sunset",
-        "fields": "suchtext",
+        "fields": [Field.KEYWORD.value],
         "limit": 0,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "asc",
+        "sort_by": SortField.DATE.value,
+        "order_by": SortOrder.ASC.value,
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -196,11 +197,11 @@ async def test_media_search_invalid_limit():
 async def test_media_search_invalid_sort_by():
     params = {
         "keyword": "sunset",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "invalidsort",
-        "order_by": "asc",
+        "sort_by": "invalid sort",
+        "order_by": SortOrder.ASC.value,
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -211,7 +212,7 @@ async def test_media_search_invalid_sort_by():
                     "type": "enum",
                     "loc": ["query", "sort_by"],
                     "msg": "Input should be 'datum', 'breite' or 'hoehe'",
-                    "input": "invalidsort",
+                    "input": "invalid sort",
                     "ctx": {"expected": "'datum', 'breite' or 'hoehe'"},
                 }
             ]
@@ -222,11 +223,11 @@ async def test_media_search_invalid_sort_by():
 async def test_media_search_invalid_order_by():
     params = {
         "keyword": "sunset",
-        "fields": "suchtext",
-        "limit": 5,
+        "fields": [Field.KEYWORD.value],
+        "limit": Limit.SMALL.value,
         "page": 1,
-        "sort_by": "datum",
-        "order_by": "invalidorder",
+        "sort_by": SortField.DATE.value,
+        "order_by": "invalid order",
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
@@ -237,7 +238,7 @@ async def test_media_search_invalid_order_by():
                     "type": "enum",
                     "loc": ["query", "order_by"],
                     "msg": "Input should be 'asc' or 'desc'",
-                    "input": "invalidorder",
+                    "input": "invalid order",
                     "ctx": {"expected": "'asc' or 'desc'"},
                 }
             ]

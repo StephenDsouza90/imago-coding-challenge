@@ -37,9 +37,7 @@ def _get_random_keyword() -> str:
 
 
 def _get_fields() -> list:
-    return [
-        Field.KEYWORD.value
-    ]  # , Field.PHOTOGRAPHER.value] TODO : Check why adding photographer is causing issues
+    return [Field.KEYWORD.value, Field.PHOTOGRAPHER.value]
 
 
 def _get_random_match() -> str:
