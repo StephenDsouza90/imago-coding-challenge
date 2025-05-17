@@ -15,8 +15,9 @@ async def test_health_check():
 @pytest.mark.asyncio
 async def test_media_search_success():
     params = {
-        "keyword": "sunset",
-        "fields": "suchtext",
+        "keyword": "northern lights",
+        "fields": ["suchtext"],
+        "match": ["phrase"],
         "limit": 5,
         "page": 1,
         "sort_by": "datum",

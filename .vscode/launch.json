@@ -29,6 +29,18 @@
                 "src/tests/e2e"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Performance Test",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "--rootdir=${workspaceFolder}",
+                "-s",
+                "src/tests/performance"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }
