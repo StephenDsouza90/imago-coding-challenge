@@ -85,31 +85,35 @@ class ElasticsearchHandler:
         Returns:
             dict: The search body for Elasticsearch.
         """
+        should_queries = []
+        if search_request.fields:
+            for field in search_request.fields:
+                should_queries.append({"term": {field: search_request.keyword}})
+        else:
+            should_queries.append({"term": {}})
+
+        should_queries.append(
+            {
+                "multi_match": {
+                    "query": search_request.keyword,
+                    "fields": search_request.fields,
+                }
+            }
+        )
+
         body = {
             "query": {
                 "bool": {
-                    "should": [
-                        {"term": {}},
-                        {
-                            "multi_match": {
-                                "query": search_request.keyword,
-                                "fields": search_request.fields,
-                            }
-                        },
-                    ],
+                    "should": should_queries,
                     "filter": self._build_filters(search_request),
                     "minimum_should_match": 1,
                 },
             },
         }
 
-        if search_request.fields:
-            body["query"]["bool"]["should"][0]["term"] = {
-                field: search_request.keyword for field in search_request.fields
-            }
-
+        # Set multi_match type if provided
         if search_request.match:
-            body["query"]["bool"]["should"][1]["multi_match"]["type"] = (
+            body["query"]["bool"]["should"][-1]["multi_match"]["type"] = (
                 search_request.match
             )
 

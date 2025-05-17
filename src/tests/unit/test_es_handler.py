@@ -11,7 +11,7 @@ from src.api.models import RequestBody, Field, Limit, SortField, SortOrder, Matc
 def get_test_params() -> RequestBody:
     return RequestBody(
         keyword="test",
-        fields=[Field.KEYWORD.value],
+        fields=[Field.KEYWORD.value, Field.PHOTOGRAPHER.value],
         match=Match.WORDS.value,
         limit=Limit.MEDIUM.value,
         page=1,
@@ -104,7 +104,10 @@ def test_build_search_body():
     assert body["size"] == 5
     assert body["from"] == 5
     assert body["sort"] == [{"datum": {"order": "asc"}}]
-    assert body["query"]["bool"]["should"][1]["multi_match"]["query"] == "test"
+    # Find and check the multi_match query in the should list
+    for q in body["query"]["bool"]["should"]:
+        if "multi_match" in q:
+            assert q["multi_match"]["query"] == "test"
     assert body["query"]["bool"]["filter"][0]["range"]["datum"]["gte"] == "2023-01-01"
     assert body["query"]["bool"]["filter"][0]["range"]["datum"]["lte"] == "2023-12-31"
     assert body["query"]["bool"]["filter"][1]["range"]["hoehe"]["gte"] == 100

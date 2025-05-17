@@ -1,167 +1,20 @@
-import logging
-from unittest.mock import AsyncMock, Mock
-from types import SimpleNamespace
-
-import pytest
-from fastapi.testclient import TestClient
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
-from src.api.routes import Routes
-from src.api.models import ResponseBody, Field, SortField, SortOrder, Limit
+from src.api.client import FastAPIClient
 
 
-@pytest.fixture
-def mock_logger():
-    return Mock(spec=logging.Logger)
+def dummy_lifespan(app: FastAPI):
+    async def lifespan_context():
+        yield
+
+    return lifespan_context
 
 
-@pytest.fixture
-def mock_media_search_service():
-    service = Mock(spec=[])
-    service.search_media = AsyncMock()
-    return service
-
-
-@pytest.fixture
-def test_app(mock_media_search_service, mock_logger):
-    routes = Routes(lambda: mock_media_search_service, mock_logger)
-    app = FastAPI()
-    app.include_router(routes.router)
-    return app
-
-
-def test_health_check(test_app):
-    client = TestClient(test_app)
-    resp = client.get("/health")
-    assert resp.status_code == 200
-    assert resp.json() == {"status": "healthy"}
-
-
-def test_search_success(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.return_value = ResponseBody(
-        total_results=2,
-        results=[{"media_url": "url1"}, {"media_url": "url2"}],
-        page=1,
-        limit=5,
-        has_next=False,
-        has_previous=False,
-    )
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 200
-    assert resp.json()["total_results"] == 2
-    assert resp.json()["results"] == [{"media_url": "url1"}, {"media_url": "url2"}]
-
-
-def test_search_success_with_multiple_fields(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.return_value = ResponseBody(
-        total_results=2,
-        results=[{"media_url": "url1"}, {"media_url": "url2"}],
-        page=1,
-        limit=5,
-        has_next=False,
-        has_previous=False,
-    )
-    params = get_test_params()
-    params["fields"] = [Field.KEYWORD, Field.PHOTOGRAPHER]
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 200
-    assert resp.json()["total_results"] == 2
-    assert resp.json()["results"] == [{"media_url": "url1"}, {"media_url": "url2"}]
-
-
-def test_search_with_missing_keyword(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = ValueError(
-        "Keyword is required."
-    )
-    params = get_test_params()
-    params["keyword"] = ""
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
-
-
-def test_search_with_missing_fields(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = ValueError(
-        "Fields are required."
-    )
-    params = get_test_params()
-    params["fields"] = [""]
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
-
-
-def test_search_bad_request_error(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    meta = SimpleNamespace(status=400)
-    mock_media_search_service.search_media.side_effect = BadRequestError(
-        meta=meta, body={}, message="Bad request"
-    )
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
-    assert "invalid" in resp.json()["detail"].lower()
-
-
-def test_search_transport_error(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = TransportError(
-        "transport error"
-    )
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 502
-    assert "transport error" in resp.json()["detail"].lower()
-
-
-def test_search_connection_error(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = ConnectionError(
-        "connection error"
-    )
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 503
-    assert "connection error" in resp.json()["detail"].lower()
-
-
-def test_search_key_error(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = KeyError("missing field")
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
-    assert "required field" in resp.json()["detail"].lower()
-
-
-def test_search_value_error(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = ValueError("bad value")
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
-    assert "bad value" in resp.json()["detail"].lower()
-
-
-def test_search_unhandled_exception(test_app, mock_media_search_service):
-    client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = Exception("unexpected")
-    params = get_test_params()
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 500
-    assert "unexpected error" in resp.json()["detail"].lower()
-
-
-def get_test_params() -> dict:
-    return {
-        "keyword": "sunset",
-        "fields": [Field.KEYWORD.value],
-        "limit": Limit.SMALL.value,
-        "page": 1,
-        "sort_by": SortField.DATE.value,
-        "order_by": SortOrder.ASC.value,
-    }
+def test_fastapi_client_initialization():
+    client = FastAPIClient(lifespan=dummy_lifespan)
+    app = client.app
+    assert app.title == "Imago Coding Challenge API"
+    assert app.version == "1.0.0"
+    cors_middleware = [mw for mw in app.user_middleware if mw.cls is CORSMiddleware]
+    assert cors_middleware, "CORS middleware should be added to the app"

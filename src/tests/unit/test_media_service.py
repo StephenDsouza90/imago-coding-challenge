@@ -6,6 +6,17 @@ from src.services.media_service import MediaSearchService
 from src.api.models import RequestBody, Field, SortOrder, SortField, Limit
 
 
+def get_test_params() -> RequestBody:
+    return RequestBody(
+        keyword="test",
+        fields=[Field.KEYWORD.value, Field.PHOTOGRAPHER.value],
+        limit=Limit.MEDIUM.value,
+        page=1,
+        sort_by=SortField.DATE.value,
+        order_by=SortOrder.ASC.value,
+    )
+
+
 @pytest.fixture
 def mock_logger():
     return MagicMock()
@@ -30,17 +41,6 @@ def mock_redis_handler():
 def service(mock_elasticsearch_handler, mock_logger, mock_redis_handler):
     return MediaSearchService(
         mock_elasticsearch_handler, mock_logger, mock_redis_handler
-    )
-
-
-def get_test_params() -> RequestBody:
-    return RequestBody(
-        keyword="test",
-        fields=[Field.KEYWORD.value],
-        limit=Limit.MEDIUM.value,
-        page=1,
-        sort_by=SortField.DATE.value,
-        order_by=SortOrder.ASC.value,
     )
 
 
