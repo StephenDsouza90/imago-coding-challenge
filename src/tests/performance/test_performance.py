@@ -46,7 +46,6 @@ def _get_random_match() -> str:
         Match.MOST.value,
         Match.CROSS.value,
         Match.PHRASE.value,
-        Match.PHRASE_PREFIX.value,
     ]
     return random.choice(matches)
 
