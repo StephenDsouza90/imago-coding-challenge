@@ -37,12 +37,12 @@ Your goal is to demonstrate how you would design and implement a system that ret
 - **Data Normalization**
     - Handle unstructured or missing fields gracefully.
     - Propose any transformations you find useful to improve searchability or data quality.
-- **Presentation or API**
+- **API**
     - Create a robust backend API (Python) that provides search and filtering endpoints for consumers.
 - **Problem Identification & Solution Proposal**
     - Identify a potential issue with the system setup (e.g., data inconsistencies, performance bottlenecks, security concerns).
     - Clearly articulate why this is a problem and how it could impact the system.
-    Propose a thoughtful solution and justify why it would be effective.
+    - Propose a thoughtful solution and justify why it would be effective.
 - **Scalability & Maintainability**
     - Discuss how your solution would handle large volumes of data.
     - Explain how you would keep your solution maintainable as more external providers and media items come online.
