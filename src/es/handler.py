@@ -15,7 +15,6 @@ class ElasticsearchHandler:
     This class builds search queries, handles exceptions, and abstracts Elasticsearch operations for the application.
     """
 
-
     def __init__(self, client: ElasticsearchClient, logger: logging.Logger):
         """
         Initialize the ElasticsearchHandler with a client and logger.
@@ -90,9 +89,7 @@ class ElasticsearchHandler:
             "query": {
                 "bool": {
                     "should": [
-                        {
-                            "term": {}
-                        },
+                        {"term": {}},
                         {
                             "multi_match": {
                                 "query": search_request.keyword,

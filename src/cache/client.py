@@ -9,7 +9,15 @@ class RedisClient:
     This class manages the connection lifecycle and basic operations for caching and retrieving data from Redis.
     """
 
-    def __init__(self, logger: logging.Logger, host: str, port: int, username: str, password: str, db: int = 0):
+    def __init__(
+        self,
+        logger: logging.Logger,
+        host: str,
+        port: int,
+        username: str,
+        password: str,
+        db: int = 0,
+    ):
         """
         Initialize the Redis client.
 
@@ -31,7 +39,13 @@ class RedisClient:
         """
         Establish a connection to the Redis server and verify connectivity with a ping.
         """
-        self.client = redis.StrictRedis(host=self.host, port=self.port, username=self.username, password=self.password, db=self.db)
+        self.client = redis.StrictRedis(
+            host=self.host,
+            port=self.port,
+            username=self.username,
+            password=self.password,
+            db=self.db,
+        )
         self.client.ping()
 
     def disconnect(self):

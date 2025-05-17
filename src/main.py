@@ -102,7 +102,9 @@ def init_redis_client(app: FastAPI, host: str, port: int, username: str, passwor
         app (FastAPI): The FastAPI application instance.
     """
     app.state.logger.info("Initializing Redis client...")
-    app.state.redis_client = RedisClient(app.state.logger, host, port, username, password)
+    app.state.redis_client = RedisClient(
+        app.state.logger, host, port, username, password
+    )
     app.state.redis_client.connect()
     app.state.logger.info("Redis client initialized.")
     app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
@@ -164,7 +166,9 @@ def create_app() -> FastAPI:
         await check_es_connection(app)
 
         # Load and validate Redis environment variables
-        redis_host, redis_port, redis_username, redis_password = load_and_validate_redis_env(app)
+        redis_host, redis_port, redis_username, redis_password = (
+            load_and_validate_redis_env(app)
+        )
 
         # Initialize Redis client
         init_redis_client(app, redis_host, redis_port, redis_username, redis_password)
