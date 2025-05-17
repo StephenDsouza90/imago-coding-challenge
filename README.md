@@ -38,12 +38,11 @@ MediaSearchAPI is a robust Python backend service designed to retrieve and serve
 - **Cache**: Redis
 - **Containerization**: Docker
 - **Orchestration**: Docker Compose & Kubernetes (manifests in `k8s/`)
-- **Kubernetes**: Uses an Ingress for external access and multiple backend pod replicas for scalability and high availability.
+- **Kubernetes**: Uses multiple backend pod replicas for scalability and high availability.
 
 ### System / App Design
 ![design](assets/images/imago-design.png)
 
-- **Ingress**: Handles external HTTP(S) traffic and routes it to the backend service.
 - **LB (Load Balancer)**: Load balances requests across multiple backend pods (replicas).
 - **Replicas**: Multiple backend pods ensure high availability and scalability (see `k8s/backend/backend-deployment.yaml`).
 - **Elasticsearch/Redis**: Accessed by backend pods for search and caching.
@@ -204,10 +203,13 @@ The API will be available at `http://localhost:8000`. Additionally, the swagger 
   ```bash
   pytest -s src/tests/performance/
   ```
-- **Performance Results:**
+- **Performance Results (Kubernetes):**
   - 5000 requests, 50 concurrent, 0 failures
   - Avg response: 78.9 ms, 95th percentile: 158 ms
-  - API is stable and fast under load
+
+- **Performance Results (Docker Compose):**
+  - 5000 requests, 50 concurrent, 0 failures
+  - Avg response: 92.2 ms, 95th percentile: 218.1 ms
 
 ---
 
@@ -225,9 +227,4 @@ The API will be available at `http://localhost:8000`. Additionally, the swagger 
 - More advanced search (fuzzy, typo tolerance)
 - CI/CD pipeline for automated testing and deployment
 - Monitoring and alerting
-
----
-
-## Credits
-- Challenge and requirements by IMAGO
-- Built with FastAPI, Elasticsearch, Redis, Docker, and Kubernetes
+- Add Ingress to handles traffic and routes
