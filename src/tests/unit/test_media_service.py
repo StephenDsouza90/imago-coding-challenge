@@ -21,8 +21,8 @@ def mock_elasticsearch_handler():
 @pytest.fixture
 def mock_redis_handler():
     handler = MagicMock()
-    handler.get_string = MagicMock()
-    handler.set_string = MagicMock()
+    handler.get = MagicMock()
+    handler.set = MagicMock()
     return handler
 
 
@@ -48,7 +48,7 @@ def get_test_params() -> RequestBody:
 async def test_search_media_success(
     service, mock_elasticsearch_handler, mock_redis_handler
 ):
-    mock_redis_handler.get_string.return_value = None
+    mock_redis_handler.get.return_value = None
     mock_response = {
         "hits": {
             "total": {"value": 2},
@@ -75,7 +75,7 @@ async def test_search_media_success(
 async def test_search_media_with_key_error(
     service, mock_elasticsearch_handler, mock_redis_handler
 ):
-    mock_redis_handler.get_string.return_value = None
+    mock_redis_handler.get.return_value = None
     mock_response = {"hits": {}}
     mock_elasticsearch_handler.search_media.return_value = mock_response
     request = get_test_params()

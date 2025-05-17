@@ -13,7 +13,7 @@ def test_redis_handler_init():
     assert handler.logger == logger
 
 
-def test_redis_handler_set_string():
+def test_redis_handler_set():
     mock_client = MagicMock(spec=RedisClient)
     mock_client.client = MagicMock()
     logger = logging.getLogger("test")
@@ -22,7 +22,7 @@ def test_redis_handler_set_string():
     mock_client.client.set.assert_called_once_with("some_key", "some_value", ex=123)
 
 
-def test_redis_handler_get_string():
+def test_redis_handler_get():
     mock_client = MagicMock(spec=RedisClient)
     mock_client.client = MagicMock()
     mock_client.client.get.return_value = b"some_value"
