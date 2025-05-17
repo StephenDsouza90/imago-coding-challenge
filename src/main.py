@@ -53,7 +53,7 @@ def load_and_validate_es_env(app: FastAPI) -> Tuple[str, int, str, str]:
     return host, port, username, password
 
 
-def load_and_validate_redis_env(app: FastAPI) -> Tuple[str, int]:
+def load_and_validate_redis_env(app: FastAPI) -> Tuple[str, int, str, str]:
     """
     Load and validate environment variables for Redis configuration.
 
@@ -66,10 +66,12 @@ def load_and_validate_redis_env(app: FastAPI) -> Tuple[str, int]:
     load_dotenv()
     host = os.getenv("REDIS_HOST")
     port = int(os.getenv("REDIS_PORT"))
-    if not all([host, port]):
+    username = os.getenv("REDIS_USERNAME")
+    password = os.getenv("REDIS_PASSWORD")
+    if not all([host, port, username, password]):
         app.state.logger.error("Missing one or more Redis environment variables.")
         raise ValueError("Missing one or more Redis environment variables.")
-    return host, port
+    return host, port, username, password
 
 
 def init_es_client(app: FastAPI, host: str, port: int, username: str, password: str):
@@ -92,7 +94,7 @@ def init_es_client(app: FastAPI, host: str, port: int, username: str, password: 
     app.state.handler = ElasticsearchHandler(app.state.client, app.state.logger)
 
 
-def init_redis_client(app: FastAPI, host: str, port: int):
+def init_redis_client(app: FastAPI, host: str, port: int, username: str, password: str):
     """
     Initialize the Redis client and store it in the application state.
 
@@ -100,7 +102,7 @@ def init_redis_client(app: FastAPI, host: str, port: int):
         app (FastAPI): The FastAPI application instance.
     """
     app.state.logger.info("Initializing Redis client...")
-    app.state.redis_client = RedisClient(app.state.logger, host, port)
+    app.state.redis_client = RedisClient(app.state.logger, host, port, username, password)
     app.state.redis_client.connect()
     app.state.logger.info("Redis client initialized.")
     app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
@@ -162,10 +164,10 @@ def create_app() -> FastAPI:
         await check_es_connection(app)
 
         # Load and validate Redis environment variables
-        redis_host, redis_port = load_and_validate_redis_env(app)
+        redis_host, redis_port, redis_username, redis_password = load_and_validate_redis_env(app)
 
         # Initialize Redis client
-        init_redis_client(app, redis_host, redis_port)
+        init_redis_client(app, redis_host, redis_port, redis_username, redis_password)
 
         # Initialize MediaSearchService
         init_media_search_service(app)

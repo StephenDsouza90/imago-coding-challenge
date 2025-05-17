@@ -6,6 +6,7 @@ from elastic_transport import ObjectApiResponse
 
 from src.api.models import RequestBody, SortField
 from src.es.client import ElasticsearchClient
+from src.es.consts import INDEX
 
 
 class ElasticsearchHandler:
@@ -14,7 +15,6 @@ class ElasticsearchHandler:
     This class builds search queries, handles exceptions, and abstracts Elasticsearch operations for the application.
     """
 
-    INDEX = "imago"
 
     def __init__(self, client: ElasticsearchClient, logger: logging.Logger):
         """
@@ -42,7 +42,7 @@ class ElasticsearchHandler:
             body = self._build_search_body(search_request)
             self.logger.info(f"Elasticsearch search body: {body}")
 
-            return await self.client.search(index=self.INDEX, body=body)
+            return await self.client.search(index=INDEX, body=body)
 
         except BadRequestError as bre:
             self.logger.error(f"Elasticsearch BadRequestError: {bre.meta}, {bre.body}")
@@ -72,6 +72,14 @@ class ElasticsearchHandler:
         """
         Build the search body for Elasticsearch based on the provided parameters.
 
+        - `bool` is used to combine multiple query clauses.
+        - `should` is used to indicate that at least one of the clauses should match.
+        - `term` is used for exact matches on fields.
+        - `multi_match` is used for matching a query against multiple fields.
+        - `type` is used to specify the type of matching (e.g., best_fields, most_fields).
+        - `filter` is used to filter results without affecting the score.
+        - `minimum_should_match` is used to specify the minimum number of clauses that must match.
+
         Args:
             search_request (MediaSearchRequest): The search parameters including query, filters, sorting, pagination, etc.
 
@@ -81,18 +89,32 @@ class ElasticsearchHandler:
         body = {
             "query": {
                 "bool": {
-                    "must": [
+                    "should": [
+                        {
+                            "term": {}
+                        },
                         {
                             "multi_match": {
                                 "query": search_request.keyword,
                                 "fields": search_request.fields,
                             }
-                        }
+                        },
                     ],
                     "filter": self._build_filters(search_request),
+                    "minimum_should_match": 1,
                 },
             },
         }
+
+        if search_request.fields:
+            body["query"]["bool"]["should"][0]["term"] = {
+                field: search_request.keyword for field in search_request.fields
+            }
+
+        if search_request.match:
+            body["query"]["bool"]["should"][1]["multi_match"]["type"] = (
+                search_request.match
+            )
 
         if search_request.limit:
             body["size"] = search_request.limit

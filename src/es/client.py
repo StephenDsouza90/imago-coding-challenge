@@ -4,6 +4,8 @@ import warnings
 from elasticsearch import AsyncElasticsearch
 from elastic_transport import SecurityWarning, ObjectApiResponse
 
+from src.es.consts import HEADER
+
 
 warnings.filterwarnings("ignore", category=SecurityWarning)
 
@@ -42,10 +44,7 @@ class ElasticsearchClient:
         self.client = AsyncElasticsearch(
             hosts=[f"{host}:{port}"],
             http_auth=(username, password),
-            headers={
-                "Accept": "application/vnd.elasticsearch+json; compatible-with=8",
-                "Content-Type": "application/vnd.elasticsearch+json; compatible-with=8",
-            },
+            headers=HEADER,
             request_timeout=timeout,
             max_retries=max_retries,
             retry_on_timeout=retry_on_timeout,

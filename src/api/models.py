@@ -43,6 +43,25 @@ class Limit(int, Enum):
     MAX = 100
 
 
+class Match(str, Enum):
+    """
+    Enumeration of match types supported in Elasticsearch for searching media items.
+
+    Attributes:
+        WORDS (str): This is the default and is used when searching for the best matching field.
+        MOST (str): Combines the scores from all matching fields.
+        CROSS (str): Used as a single combined field.
+        PHRASE (str): Used for exact phrase matching.
+        PHRASE_PREFIX (str): Used for matching phrases with a prefix (useful for autocomplete).
+    """
+
+    WORDS = "best_fields"
+    MOST = "most_fields"
+    CROSS = "cross_fields"
+    PHRASE = "phrase"
+    PHRASE_PREFIX = "phrase_prefix"
+
+
 class RequestBody(BaseModel):
     """
     Request body for searching media items.
@@ -50,17 +69,25 @@ class RequestBody(BaseModel):
 
     keyword: str = PydanticField(..., description="Search keyword.")
     fields: List[str] = PydanticField(
-        default_factory=lambda: [Field.KEYWORD], description="Fields to search in."
+        default_factory=lambda: [Field.KEYWORD],
+        description="Fields to search in. Supported: suchtext, fotografen.",
+    )
+    match: Match = PydanticField(
+        Match.WORDS,
+        description="Match type for search. Supported: best_fields, most_fields, cross_fields, phrase, phrase_prefix.",
     )
     limit: Limit = PydanticField(
-        Limit.SMALL, description="Number of results per page (1-100)."
+        Limit.SMALL,
+        description="Number of results per page. Supported: 5, 10, 20, 50, 100.",
     )
     page: int = PydanticField(1, description="Page number for pagination.")
     sort_by: SortField = PydanticField(
-        SortField.DATE, description="Field to sort results by."
+        SortField.DATE,
+        description="Field to sort results by. Supported: datum, breite, hoehe.",
     )
     order_by: SortOrder = PydanticField(
-        SortOrder.ASC, description="Sort order (ascending/descending)."
+        SortOrder.DESC,
+        description="Sort order (ascending/descending). Supported: asc, desc.",
     )
     date_from: Optional[str] = PydanticField(
         None, description="Start date filter (YYYY-MM-DD)."
@@ -82,6 +109,7 @@ class RequestBody(BaseModel):
             "example": {
                 "keyword": "nature",
                 "fields": ["suchtext", "fotografen"],
+                "match": ["phrase"],
                 "limit": 10,
                 "page": 1,
                 "sort_by": "datum",
