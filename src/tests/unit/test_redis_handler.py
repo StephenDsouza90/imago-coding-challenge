@@ -18,7 +18,7 @@ def test_redis_handler_set_string():
     mock_client.client = MagicMock()
     logger = logging.getLogger("test")
     handler = RedisHandler(client=mock_client, logger=logger)
-    handler.set_string("some_key", "some_value", expire=123)
+    handler.set("some_key", "some_value", expire=123)
     mock_client.client.set.assert_called_once_with("some_key", "some_value", ex=123)
 
 
@@ -28,6 +28,6 @@ def test_redis_handler_get_string():
     mock_client.client.get.return_value = b"some_value"
     logger = logging.getLogger("test")
     handler = RedisHandler(client=mock_client, logger=logger)
-    result = handler.get_string("some_key")
+    result = handler.get("some_key")
     mock_client.client.get.assert_called_once_with("some_key")
     assert result == b"some_value"

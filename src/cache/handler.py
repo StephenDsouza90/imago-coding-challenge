@@ -21,7 +21,7 @@ class RedisHandler:
         self.client = client
         self.logger = logger
 
-    def set_string(self, key: str, value: str, expire: int = 3600):
+    def set(self, key: str, value: str, expire: int = 3600):
         """
         Store a string value in Redis with an optional expiration time (default: 1 hour).
         Overwrites any existing value for the given key.
@@ -33,7 +33,7 @@ class RedisHandler:
         """
         self.client.client.set(key, value, ex=expire)
 
-    def get_string(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> Optional[str]:
         """
         Retrieve a string value from Redis by key.
         Returns None if the key does not exist.

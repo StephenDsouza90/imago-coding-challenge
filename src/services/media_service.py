@@ -58,7 +58,7 @@ class MediaSearchService:
             self._validate_search_request(search_request)
 
             cache_key = f"media_search:{hash(str(search_request.model_dump()))}"
-            cached_response = self.redis_handler.get_string(cache_key)
+            cached_response = self.redis_handler.get(cache_key)
             if cached_response:
                 self.logger.info("Cache hit for search request.")
                 cached_response = json.loads(cached_response)
@@ -85,7 +85,7 @@ class MediaSearchService:
                 has_previous=search_request.page > 1,
             )
 
-            self.redis_handler.set_string(
+            self.redis_handler.set(
                 cache_key, json.dumps(response.model_dump()), expire=3600
             )
             self.logger.info("Cache set for search request.")
