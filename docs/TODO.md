@@ -60,5 +60,5 @@
 - [x] Check TODOs
 - [x] Code quality check
 - [x] Verify all requirements are addressed
-- [ ] Remove all passwords before final deployment
-- [ ] Prepare submission package
+- [x] Remove all passwords before final deployment
+- [x] Prepare submission package
