@@ -146,9 +146,17 @@ async def test_media_search_missing_keyword():
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
-            "detail": "The search request has a bad value. Please check your parameters and try again."
+            "detail": [
+                {
+                    "type": "string_too_short",
+                    "loc": ["query", "keyword"],
+                    "msg": "String should have at least 2 characters",
+                    "input": "",
+                    "ctx": {"min_length": 2},
+                }
+            ]
         }
 
 
