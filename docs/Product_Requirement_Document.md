@@ -7,7 +7,7 @@ The purpose of this product is to create a backend system that retrieves media c
 ### 1.2 Scope
 - **In Scope**:
   - Backend API for media search and retrieval.
-  - Integration with Elasticsearch for data storage and querying.
+  - Integration with Elasticsearch for data querying.
   - URL generation for media thumbnails.
   - Basic caching using Redis to improve performance.
 - **Out of Scope**:
@@ -19,8 +19,6 @@ The purpose of this product is to create a backend system that retrieves media c
 - Ensure efficient performance and scalability for large datasets.
 - Handle unstructured or missing data gracefully.
 - Demonstrate coding skills, thought process, and problem-solving abilities.
-
----
 
 ## 2. **Functional Requirements**
 ### 2.1 Core Features
@@ -42,8 +40,6 @@ The purpose of this product is to create a backend system that retrieves media c
 - Output: Media metadata and constructed URLs.
 - Transformations: Normalize data (e.g., handle missing fields).
 
----
-
 ## 3. **Non-Functional Requirements**
 ### 3.1 Performance
 - API response time should be under 500ms for most queries.
@@ -57,8 +53,6 @@ The purpose of this product is to create a backend system that retrieves media c
 
 ### 3.4 Usability
 - Provide clear and descriptive error messages for invalid queries or no results.
-
----
 
 ## 4. **Technical Requirements**
 ### 4.1 System Architecture
@@ -80,22 +74,16 @@ The purpose of this product is to create a backend system that retrieves media c
 - Integrate with the provided Elasticsearch server for media data.
 - Use Redis for caching search results and frequently accessed data.
 
----
-
 ## 5. **Assumptions and Constraints**
 - The Elasticsearch server is accessible and operational.
 - Redis is available for caching.
 - The system will only handle backend functionality; no frontend is required.
-
----
 
 ## 6. **Risks and Mitigation**
 - **Risk**: Elasticsearch downtime.
   - **Mitigation**: Implement retry logic and fallback mechanisms.
 - **Risk**: High latency for large datasets.
   - **Mitigation**: Use Redis caching and optimize Elasticsearch queries.
-
----
 
 ## 7. **Success Metrics**
 - API response time under 500ms for 90% of queries.
