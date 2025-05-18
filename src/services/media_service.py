@@ -2,7 +2,6 @@ import logging
 import json
 from datetime import datetime
 
-from elasticsearch.exceptions import BadRequestError
 
 from src.es.handler import ElasticsearchHandler
 from src.cache.handler import RedisHandler
@@ -97,28 +96,9 @@ class MediaSearchService:
 
             return response
 
-        except BadRequestError as bre:
-            raise BadRequestError(
-                message="The Elasticsearch query was invalid.",
-                meta=bre.meta,
-                body=bre.body,
-            )
-
-        except ValueError as ve:
-            self.logger.error(f"Validation error: {ve}")
-            raise ValueError("Invalid input: " + str(ve))
-
-        except KeyError as ke:
-            self.logger.error(
-                f"Key error: {ke}. Elasticsearch response: {locals().get('response', None)}"
-            )
-            raise KeyError(
-                "A required field was missing in the Elasticsearch response."
-            )
-
         except Exception as e:
-            self.logger.error(f"Unexpected error during media search: {e}")
-            raise Exception("An unexpected error occurred while searching for media.")
+            self.logger.error(f"Error during media search: {e}")
+            raise
 
     def _validate_search_request(self, search_request: RequestBody):
         """

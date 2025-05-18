@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, Union, List
 
-from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 from elastic_transport import ObjectApiResponse
 
 from src.api.models import RequestBody, SortField
@@ -48,29 +47,9 @@ class ElasticsearchHandler:
 
             return await self.client.search(index=INDEX, body=body)
 
-        except BadRequestError as bre:
-            self.logger.error(f"Elasticsearch BadRequestError: {bre.meta}, {bre.body}")
-            raise BadRequestError(
-                message="The Elasticsearch query was invalid.",
-                meta=bre.meta,
-                body=bre.body,
-            )
-
-        except ConnectionError as ce:
-            self.logger.error(f"Elasticsearch ConnectionError: {ce}")
-            raise ConnectionError(
-                message="A connection error occurred while searching in Elasticsearch.",
-            )
-
-        except TransportError as te:
-            self.logger.error(f"Elasticsearch TransportError: {te}")
-            raise TransportError(
-                message="A transport error occurred while searching in Elasticsearch.",
-            )
-
         except Exception as e:
             self.logger.error(f"Elasticsearch search error: {e}")
-            raise Exception("An error occurred while searching in Elasticsearch.")
+            raise
 
     def _build_search_body(self, search_request: RequestBody) -> dict:
         """

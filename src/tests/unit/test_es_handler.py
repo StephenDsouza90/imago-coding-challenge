@@ -44,7 +44,11 @@ async def test_search_media_bad_request_error():
     mock_logger = logging.getLogger("test")
     handler = ElasticsearchHandler(client=mock_client, logger=mock_logger)
     req = get_test_params()
-    error = BadRequestError(message="bad request", meta=None, body=None)
+
+    class Meta:
+        status = 400
+
+    error = BadRequestError(message="bad request", meta=Meta(), body={})
     mock_client.search = AsyncMock(side_effect=error)
     with pytest.raises(BadRequestError):
         await handler.search_media(req)

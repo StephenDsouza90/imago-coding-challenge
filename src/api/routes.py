@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Query, Depends
-from fastapi import status
-from fastapi.exceptions import HTTPException
-from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
 from src.api.models import RequestBody, ResponseBody
 from src.services.media_service import MediaSearchService
+from src.api.error_map import map_service_exception
 
 
 class Routes:
@@ -84,45 +82,5 @@ class Routes:
             """
             try:
                 return await media_search_service.search_media(search_request)
-
-            except AssertionError:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="The search request was invalid. Please check your parameters and try again.",
-                )
-
-            except BadRequestError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="The search request was invalid. Please check your parameters and try again.",
-                )
-
-            except ConnectionError:
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="A connection error occurred while processing your request. Please try again later.",
-                )
-
-            except TransportError:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail="A transport error occurred while processing your request. Please try again later.",
-                )
-
-            except KeyError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="A required field was missing in the search response.",
-                )
-
-            except ValueError:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="The search request has a bad value. Please check your parameters and try again.",
-                )
-
-            except Exception:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="An unexpected error occurred while processing your request. Please try again later.",
-                )
+            except Exception as exc:
+                raise map_service_exception(exc)
