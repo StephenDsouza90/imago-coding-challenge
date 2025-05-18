@@ -67,7 +67,13 @@ class RequestBody(BaseModel):
     Request body for searching media items.
     """
 
-    keyword: str = PydanticField(..., description="Search keyword.")
+    keyword: str = PydanticField(
+        ...,
+        description="Search keyword.",
+        min_length=2,
+        max_length=100,
+        pattern=r"^[a-zA-Z0-9\s]+$",  # Regex to allow only alphanumeric characters and spaces
+    )
     fields: List[str] = PydanticField(
         default_factory=lambda: [Field.KEYWORD],
         description="Fields to search in. Supported: suchtext, fotografen.",
@@ -80,7 +86,7 @@ class RequestBody(BaseModel):
         Limit.SMALL,
         description="Number of results per page. Supported: 5, 10, 20, 50, 100.",
     )
-    page: int = PydanticField(1, description="Page number for pagination.")
+    page: int = PydanticField(1, description="Page number for pagination.", ge=1)
     sort_by: SortField = PydanticField(
         SortField.DATE,
         description="Field to sort results by. Supported: datum, breite, hoehe.",
@@ -90,19 +96,27 @@ class RequestBody(BaseModel):
         description="Sort order (ascending/descending). Supported: asc, desc.",
     )
     date_from: Optional[str] = PydanticField(
-        None, description="Start date filter (YYYY-MM-DD)."
+        None,
+        description="Start date filter (YYYY-MM-DD).",
+        pattern=r"^\d{4}-\d{2}-\d{2}$",  # Regex to validate date format (YYYY-MM-DD)
     )
     date_to: Optional[str] = PydanticField(
-        None, description="End date filter (YYYY-MM-DD)."
+        None,
+        description="End date filter (YYYY-MM-DD).",
+        pattern=r"^\d{4}-\d{2}-\d{2}$",  # Regex to validate date format (YYYY-MM-DD)
     )
     height_min: Optional[int] = PydanticField(
-        None, description="Minimum height filter."
+        None, description="Minimum height filter.", ge=0
     )
     height_max: Optional[int] = PydanticField(
-        None, description="Maximum height filter."
+        None, description="Maximum height filter.", ge=0
     )
-    width_min: Optional[int] = PydanticField(None, description="Minimum width filter.")
-    width_max: Optional[int] = PydanticField(None, description="Maximum width filter.")
+    width_min: Optional[int] = PydanticField(
+        None, description="Minimum width filter.", ge=0
+    )
+    width_max: Optional[int] = PydanticField(
+        None, description="Maximum width filter.", ge=0
+    )
 
     model_config = ConfigDict(
         json_schema_extra={

@@ -76,54 +76,9 @@ async def test_search_media_with_key_error(
 
 
 @pytest.mark.asyncio
-async def test_search_media_invalid_keyword(service):
-    request = get_test_params()
-    request.keyword = ""
-    with pytest.raises(ValueError):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
 async def test_search_media_invalid_field(service):
     request = get_test_params()
     request.fields = ["Invalid Field"]
-    with pytest.raises(ValueError):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
-async def test_search_media_elasticsearch_wildcard_injection(service):
-    """
-    Wildcard injection is a common attack in Elasticsearch queries.
-    This test checks if the service correctly raises an error when a wildcard is used in the keyword.
-    """
-    request = get_test_params()
-    request.keyword = "*"
-    with pytest.raises(ValueError):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
-async def test_search_media_elasticsearch_query_dsl_injection(service):
-    """
-    Query DSL (Domain Specific Language) injection is a common attack in Elasticsearch queries.
-
-    This test checks if the service correctly raises an error when a query DSL is used in the keyword.
-    """
-    request = get_test_params()
-    request.keyword = '{ "query": { "match_all": {} } }'
-    with pytest.raises(ValueError):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
-async def test_search_media_elasticsearch_reserved_characters(service):
-    """
-    Reserved characters in Elasticsearch queries can lead to unexpected behavior.
-    This test checks if the service correctly raises an error when reserved characters are used in the keyword.
-    """
-    request = get_test_params()
-    request.keyword = '+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\'
     with pytest.raises(ValueError):
         await service.search_media(request)
 
@@ -178,7 +133,8 @@ async def test_search_media_invalid_date_range(service):
 
 
 @pytest.mark.asyncio
-async def test_search_media_invalid_limit_zero(service):
+async def test_search_media_invalid_limit_zero(service, mock_redis_handler):
+    mock_redis_handler.get.return_value = None
     request = get_test_params()
     request.limit = 0
     with pytest.raises(ValueError, match="Limit must be a positive integer"):
@@ -190,22 +146,6 @@ async def test_search_media_invalid_limit_negative(service):
     request = get_test_params()
     request.limit = -5
     with pytest.raises(ValueError, match="Limit must be a positive integer"):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
-async def test_search_media_invalid_page_zero(service):
-    request = get_test_params()
-    request.page = 0
-    with pytest.raises(ValueError, match="Page must be a positive integer"):
-        await service.search_media(request)
-
-
-@pytest.mark.asyncio
-async def test_search_media_invalid_page_negative(service):
-    request = get_test_params()
-    request.page = -2
-    with pytest.raises(ValueError, match="Page must be a positive integer"):
         await service.search_media(request)
 
 

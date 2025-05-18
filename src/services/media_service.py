@@ -112,18 +112,6 @@ class MediaSearchService:
         Raises:
             ValueError: If any of the parameters are invalid
         """
-        if not search_request.keyword:
-            self.logger.error("Keyword is required.")
-            raise ValueError("Keyword is required.")
-
-        if len(search_request.keyword) < 2:
-            self.logger.error("Keyword must be at least 2 characters long.")
-            raise ValueError("Keyword must be at least 2 characters long.")
-
-        if not all(char.isalnum() or char.isspace() for char in search_request.keyword):
-            self.logger.error("Keyword contains invalid characters.")
-            raise ValueError("Keyword contains invalid characters.")
-
         if not search_request.fields:
             self.logger.error("At least one field is required.")
             raise ValueError("At least one field is required.")
@@ -137,10 +125,6 @@ class MediaSearchService:
         if search_request.limit <= 0 or search_request.limit > Limit.MAX.value:
             self.logger.error("Limit must be a positive integer.")
             raise ValueError("Limit must be a positive integer.")
-
-        if search_request.page <= 0:
-            self.logger.error("Page must be a positive integer.")
-            raise ValueError("Page must be a positive integer.")
 
         if search_request.sort_by not in SortField.__members__.values():
             self.logger.error(f"Invalid sort field: {search_request.sort_by}")
@@ -235,7 +219,9 @@ class MediaSearchService:
         """
         return "st" if database == "stock" else "sp"
 
-    def _get_formatted_image_number(self, image_number: str) -> str:
+    def _get_formatted_image_number(
+        self, image_number: str, max_length: int = 10, pad_with: str = "0"
+    ) -> str:
         """
         Format Image Number
         -------------
@@ -249,9 +235,11 @@ class MediaSearchService:
         """
         formatted_image_number = image_number
 
-        if len(image_number) == 10:
+        if len(image_number) == max_length:
             formatted_image_number = image_number
-        elif len(image_number) < 10:
-            formatted_image_number = "0" * (10 - len(image_number)) + image_number
+        elif len(image_number) < max_length:
+            formatted_image_number = (
+                pad_with * (max_length - len(image_number)) + image_number
+            )
 
         return formatted_image_number
