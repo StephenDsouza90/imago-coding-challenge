@@ -19,6 +19,7 @@ from src.api.models import (
 class MediaSearchService:
     """
     MediaSearchService coordinates search operations between Elasticsearch and Redis cache.
+
     This service validates input, manages caching, and transforms Elasticsearch results into API responses.
     """
 
@@ -29,6 +30,8 @@ class MediaSearchService:
         redis_handler: RedisHandler,
     ):
         """
+        MediaSearchService
+        -------------
         Initialize the MediaSearchService with handlers for Elasticsearch and Redis, and a logger.
 
         Args:
@@ -42,6 +45,8 @@ class MediaSearchService:
 
     async def search_media(self, search_request: RequestBody) -> ResponseBody:
         """
+        Media Search
+        -------------
         Search for media items using the provided query parameters.
         Handles validation, caching, and result transformation.
 
@@ -117,6 +122,8 @@ class MediaSearchService:
 
     def _validate_search_request(self, search_request: RequestBody):
         """
+        Validate Search Request
+        -------------
         Validate the search parameters.
 
         Args:
@@ -192,6 +199,8 @@ class MediaSearchService:
 
     def _is_valid_date(self, date_str: str) -> bool:
         """
+        Validate Date Format
+        -------------
         Validate if the date string is in YYYY-MM-DD format.
 
         Args:
@@ -215,6 +224,8 @@ class MediaSearchService:
         file_format: str = "jpg",
     ) -> str:
         """
+        Generate Image URL
+        -------------
         Generate a URL for the image based on the database and image number.
 
         Args:
@@ -232,6 +243,8 @@ class MediaSearchService:
 
     def _get_database_code(self, database: str) -> str:
         """
+        Get Database Code
+        -------------
         Get the database code based on the database name.
 
         Args:
@@ -243,6 +256,17 @@ class MediaSearchService:
         return "st" if database == "stock" else "sp"
 
     def _get_formatted_image_number(self, image_number: str) -> str:
+        """
+        Format Image Number
+        -------------
+        Format the image number to ensure it is 10 digits long.
+
+        Args:
+            image_number (str): The image number to format.
+
+        Returns:
+            str: The formatted image number, padded with leading zeros if necessary.
+        """
         formatted_image_number = image_number
 
         if len(image_number) == 10:

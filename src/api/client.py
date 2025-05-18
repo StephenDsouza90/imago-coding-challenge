@@ -12,21 +12,23 @@ class FastAPIClient:
 
     def __init__(self, lifespan):
         """
+        FastAPIClient
+        -------------
         Initialize the FastAPI application with OpenAPI metadata and CORS middleware.
 
         Args:
-            lifespan (asyncio.Lifespan): Lifespan context manager for the FastAPI app.
+            lifespan: Lifespan context manager for the FastAPI app.
         """
         self.app = FastAPI(
             title="Imago Coding Challenge API",
-            description="""
-            The Imago Coding Challenge API provides endpoints for searching and retrieving media items from an Elasticsearch backend.\n\n
-            **Features:**
-            - Advanced search with filters and sorting
-            - Pagination support
-            - Health check endpoint
-            - OpenAPI/Swagger documentation available at `/docs` and `/redoc`
-            """,
+            description=(
+                "The Imago Coding Challenge API provides endpoints for searching and retrieving media items from an Elasticsearch backend.\n\n"
+                "Features:\n"
+                "- Advanced search with filters and sorting\n"
+                "- Pagination support\n"
+                "- Health check endpoint\n"
+                "- OpenAPI/Swagger documentation available at `/docs` and `/redoc`"
+            ),
             version="1.0.0",
             lifespan=lifespan,
         )

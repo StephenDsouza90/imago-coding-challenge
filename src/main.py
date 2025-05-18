@@ -88,10 +88,14 @@ def init_es_client(app: FastAPI, host: str, port: int, username: str, password: 
     Returns:
     """
     app.state.logger.info("Initializing Elasticsearch client...")
-    app.state.client = ElasticsearchClient(
-        app.state.logger, host, port, username, password
-    )
-    app.state.handler = ElasticsearchHandler(app.state.client, app.state.logger)
+    try:
+        app.state.client = ElasticsearchClient(host, port, username, password)
+        app.state.client.connect()
+        app.state.logger.info("Elasticsearch client connected.")
+        app.state.handler = ElasticsearchHandler(app.state.client, app.state.logger)
+    except Exception as e:
+        app.state.logger.error(f"Failed to connect to Elasticsearch: {e}")
+        raise Exception("Elasticsearch client connection failed.")
 
 
 def init_redis_client(app: FastAPI, host: str, port: int, username: str, password: str):
@@ -101,14 +105,17 @@ def init_redis_client(app: FastAPI, host: str, port: int, username: str, passwor
     Args:
         app (FastAPI): The FastAPI application instance.
     """
-    app.state.logger.info("Initializing Redis client...")
-    app.state.redis_client = RedisClient(
-        app.state.logger, host, port, username, password
-    )
-    app.state.redis_client.connect()
-    app.state.logger.info("Redis client initialized.")
-    app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
-    app.state.logger.info("Redis handler initialized.")
+    app.state.logger.info("Initializing Redis client and handler...")
+    app.state.redis_client = RedisClient(host, port, username, password)
+
+    try:
+        app.state.redis_client.connect()
+        app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
+    except Exception as e:
+        app.state.logger.error(f"Failed to connect to Redis: {e}")
+        raise Exception("Redis client connection failed.")
+
+    app.state.logger.info("Redis client and handler initialized.")
 
 
 async def check_es_connection(app: FastAPI):
@@ -192,7 +199,7 @@ def create_app() -> FastAPI:
     def get_media_search_service(request: Request) -> MediaSearchService:
         return request.app.state.media_search_service
 
-    router_instance = Routes(get_media_search_service, logger)
+    router_instance = Routes(get_media_search_service)
     app.include_router(router_instance.router)
     logger.info("FastAPI application created and routes included.")
     return app

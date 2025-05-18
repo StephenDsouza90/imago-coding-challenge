@@ -6,6 +6,7 @@ import json_log_formatter
 class Logger:
     """
     Logger configures and provides a singleton JSON-formatted logger for the application.
+
     This logger outputs logs in JSON format, suitable for structured logging and integration with log management systems.
     """
 
@@ -13,6 +14,8 @@ class Logger:
 
     def __init__(self):
         """
+        Logger
+        -------------
         Initialize the Logger and set up JSON logging if not already configured.
         """
         if self._logger is None:
@@ -21,6 +24,8 @@ class Logger:
     @classmethod
     def setup_logging(cls):
         """
+        Setup Logging
+        -------------
         Set up a JSON log formatter and attach it to the logger instance.
         """
         if cls._logger is None:
@@ -35,6 +40,8 @@ class Logger:
     @classmethod
     def get_logger(cls):
         """
+        Get Logger
+        -------------
         Retrieve the singleton logger instance for use throughout the application.
         """
         return cls._logger

@@ -77,7 +77,7 @@ async def test_media_search_success_with_invalid_date():
         resp = await client.get("/api/media/search", params=params)
         assert resp.status_code == 400
         assert resp.json() == {
-            "detail": "Invalid input: date_from must be in YYYY-MM-DD format."
+            "detail": "The search request has a bad value. Please check your parameters and try again."
         }
 
 
@@ -130,7 +130,7 @@ async def test_media_search_success_with_invalid_height_and_width():
         resp = await client.get("/api/media/search", params=params)
         assert resp.status_code == 400
         assert resp.json() == {
-            "detail": "Invalid input: height_min must be less than or equal to height_max."
+            "detail": "The search request has a bad value. Please check your parameters and try again."
         }
 
 
@@ -147,7 +147,9 @@ async def test_media_search_missing_keyword():
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
         assert resp.status_code == 400
-        assert resp.json() == {"detail": "Invalid input: Keyword is required."}
+        assert resp.json() == {
+            "detail": "The search request has a bad value. Please check your parameters and try again."
+        }
 
 
 @pytest.mark.asyncio
@@ -163,8 +165,9 @@ async def test_media_search_invalid_field():
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
         assert resp.status_code == 400
-        print(resp.json())
-        assert resp.json() == {"detail": "Invalid input: Invalid field: invalid field"}
+        assert resp.json() == {
+            "detail": "The search request has a bad value. Please check your parameters and try again."
+        }
 
 
 @pytest.mark.asyncio

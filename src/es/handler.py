@@ -12,11 +12,14 @@ from src.es.consts import INDEX
 class ElasticsearchHandler:
     """
     ElasticsearchHandler provides high-level methods for querying and managing media data in Elasticsearch.
+
     This class builds search queries, handles exceptions, and abstracts Elasticsearch operations for the application.
     """
 
     def __init__(self, client: ElasticsearchClient, logger: logging.Logger):
         """
+        ElasticsearchHandler
+        -------------
         Initialize the ElasticsearchHandler with a client and logger.
 
         Args:
@@ -28,6 +31,8 @@ class ElasticsearchHandler:
 
     async def search_media(self, search_request: RequestBody) -> ObjectApiResponse:
         """
+        Search Media
+        -------------
         Perform a search for media items in Elasticsearch using the provided search parameters.
 
         Args:
@@ -69,6 +74,8 @@ class ElasticsearchHandler:
 
     def _build_search_body(self, search_request: RequestBody) -> dict:
         """
+        Build Search Body
+        -------------
         Build the search body for Elasticsearch based on the provided parameters.
 
         - `bool` is used to combine multiple query clauses.
@@ -85,33 +92,16 @@ class ElasticsearchHandler:
         Returns:
             dict: The search body for Elasticsearch.
         """
-        should_queries = []
-        if search_request.fields:
-            for field in search_request.fields:
-                should_queries.append({"term": {field: search_request.keyword}})
-        else:
-            should_queries.append({"term": {}})
-
-        should_queries.append(
-            {
-                "multi_match": {
-                    "query": search_request.keyword,
-                    "fields": search_request.fields,
-                }
-            }
-        )
-
         body = {
             "query": {
                 "bool": {
-                    "should": should_queries,
+                    "should": self._build_should_queries(search_request),
                     "filter": self._build_filters(search_request),
                     "minimum_should_match": 1,
                 },
             },
         }
 
-        # Set multi_match type if provided
         if search_request.match:
             body["query"]["bool"]["should"][-1]["multi_match"]["type"] = (
                 search_request.match
@@ -130,8 +120,40 @@ class ElasticsearchHandler:
 
         return body
 
+    def _build_should_queries(self, search_request: RequestBody) -> List[dict]:
+        """
+        Build Should Queries
+        -------------
+        Build the should part of the Elasticsearch query based on the provided parameters.
+
+        Args:
+            search_request (MediaSearchRequest): The search parameters including query, filters, sorting, pagination, etc.
+
+        Returns:
+            List[dict]: A list of should query dictionaries for Elasticsearch.
+        """
+        should_queries = []
+
+        if search_request.fields:
+            for field in search_request.fields:
+                should_queries.append({"term": {field: search_request.keyword}})
+        else:
+            should_queries.append({"term": {}})
+
+        should_queries.append(
+            {
+                "multi_match": {
+                    "query": search_request.keyword,
+                    "fields": search_request.fields,
+                }
+            }
+        )
+        return should_queries
+
     def _build_filters(self, search_request: RequestBody) -> List[dict]:
         """
+        Build Filters
+        -------------
         Build the filter part of the Elasticsearch query based on the provided parameters.
 
         Args:
@@ -166,6 +188,8 @@ class ElasticsearchHandler:
         self, field: str, gte_val: Union[str, int], lte_val: Union[str, int]
     ) -> Optional[dict]:
         """
+        Build Range Filter
+        -------------
         Build a range filter for Elasticsearch.
 
         Args:

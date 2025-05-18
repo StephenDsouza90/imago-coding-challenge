@@ -143,20 +143,28 @@ class ResponseBody(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "total_results": 42,
-                "results": [
-                    {
-                        "id": 1,
-                        "title": "Sunset",
-                        "photographer": "Alice",
-                        "date": "2024-05-01",
-                    }
-                ],
-                "page": 1,
-                "limit": 10,
-                "has_next": True,
-                "has_previous": False,
-            }
+            "total_results": 1000,
+            "results": [
+                {
+                    "_index": "imago",
+                    "_id": "BE0PZpQBcFpCmfdy_ns1",
+                    "_score": "null",
+                    "_source": {
+                        "bildnummer": "108420352",
+                        "datum": "2019-04-20T00:00:00.000Z",
+                        "suchtext": "Some text",
+                        "fotografen": "TT",
+                        "hoehe": "5504",
+                        "breite": "8256",
+                        "db": "stock",
+                    },
+                    "sort": [8256],
+                    "media_url": "https://www.imago-images.de/bild/st/0108420352/s.jpg",
+                },
+            ],
+            "page": 1,
+            "limit": 10,
+            "has_next": "true",
+            "has_previous": "false",
         }
     )

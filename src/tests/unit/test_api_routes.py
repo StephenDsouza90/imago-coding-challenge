@@ -1,4 +1,3 @@
-import logging
 from unittest.mock import AsyncMock, Mock
 from types import SimpleNamespace
 
@@ -23,11 +22,6 @@ def get_test_params() -> dict:
 
 
 @pytest.fixture
-def mock_logger():
-    return Mock(spec=logging.Logger)
-
-
-@pytest.fixture
 def mock_media_search_service():
     service = Mock(spec=[])
     service.search_media = AsyncMock()
@@ -35,8 +29,8 @@ def mock_media_search_service():
 
 
 @pytest.fixture
-def test_app(mock_media_search_service, mock_logger):
-    routes = Routes(lambda: mock_media_search_service, mock_logger)
+def test_app(mock_media_search_service):
+    routes = Routes(lambda: mock_media_search_service)
     app = FastAPI()
     app.include_router(routes.router)
     return app

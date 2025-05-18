@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import APIRouter, Query, Depends
 from fastapi import status
 from fastapi.exceptions import HTTPException
@@ -14,18 +12,16 @@ class Routes:
     This class defines the API routes for the MediaSearch application.
     """
 
-    def __init__(
-        self, get_media_search_service: MediaSearchService, logger: logging.Logger
-    ):
+    def __init__(self, get_media_search_service: MediaSearchService):
         """
+        Routes
+        -------------
         Initialize the Routes class.
 
         Args:
             get_media_search_service (MediaSearchService): The service to handle media search operations.
-            logger (logging.Logger): The logger instance for logging.
         """
         self.get_media_search_service = get_media_search_service
-        self.logger = logger
         self.router = APIRouter()
         self.setup_routes()
 
@@ -43,23 +39,22 @@ class Routes:
             -------------
             Returns a simple status message to verify that the API is up and running.
 
-            **Returns:**
-                - **200 OK**: `{ "status": "healthy" }`
+            Returns:
+                dict: A dictionary containing the status message.
             """
             return {"status": "healthy"}
 
         @self.router.get(
             "/api/media/search",
             summary="Search for media",
-            description="""
-            Search for media items using various filters and sorting options.\n\n
-            **Query Parameters:**
-            - All fields of `RequestBody` can be used as query parameters.
-
-            **Returns:**
-                - **200 OK**: A list of media items matching the search criteria, wrapped in a `ResponseBody`.
-                - **400/422/503/502/500**: Error details if the request is invalid or a server error occurs.
-            """,
+            description=(
+                "Search for media items using various filters and sorting options.<br/><br/>"
+                "<b>Query Parameters:</b><br/>"
+                "- All fields of <code>RequestBody</code> can be used as query parameters.<br/><br/>"
+                "<b>Returns:</b><br/>"
+                "- <b>200 OK</b>: A list of media items matching the search criteria, wrapped in a <code>ResponseBody</code>.<br/>"
+                "- <b>400/422/503/502/500</b>: Error details if the request is invalid or a server error occurs."
+            ),
             tags=["Media Search"],
             response_model=ResponseBody,
             response_description="A list of media items matching the search criteria.",
@@ -75,22 +70,22 @@ class Routes:
             """
             Media Search Endpoint
             ---------------------
-            Allows users to search for media items by providing various filters and sorting options.\n\n
-            **Args:**
-                - `search_request` (`RequestBody`): The request body containing search parameters.
-                - `media_search_service` (`MediaSearchService`): The service to handle media search operations.
+            Allows users to search for media items by providing various filters and sorting options.
 
-            **Returns:**
-                - `ResponseBody`: The response body containing search results.
+            Args:
+                search_request (RequestBody): The request body containing search parameters.
+                media_search_service (MediaSearchService): The media search service instance.
 
-            **Raises:**
-                - `HTTPException`: If there is an error during the search process.
+            Returns:
+                ResponseBody: A response body containing the search results.
+
+            Raises:
+                HTTPException: If the search request is invalid or if a server error occurs.
             """
             try:
                 return await media_search_service.search_media(search_request)
 
-            except AssertionError as ae:
-                self.logger.error(f"AssertionError: {ae}")
+            except AssertionError:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="The search request was invalid. Please check your parameters and try again.",
@@ -102,36 +97,31 @@ class Routes:
                     detail="The search request was invalid. Please check your parameters and try again.",
                 )
 
-            except ConnectionError as ce:
-                self.logger.error(f"ConnectionError: {ce}")
+            except ConnectionError:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="A connection error occurred while processing your request. Please try again later.",
                 )
 
-            except TransportError as te:
-                self.logger.error(f"TransportError: {te}")
+            except TransportError:
                 raise HTTPException(
                     status_code=status.HTTP_502_BAD_GATEWAY,
                     detail="A transport error occurred while processing your request. Please try again later.",
                 )
 
-            except KeyError as ke:
-                self.logger.error(f"KeyError: {ke}")
+            except KeyError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="A required field was missing in the search response.",
                 )
 
-            except ValueError as ve:
-                self.logger.error(f"ValueError: {ve}")
+            except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=str(ve),
+                    detail="The search request has a bad value. Please check your parameters and try again.",
                 )
 
-            except Exception as e:
-                self.logger.error(f"Unhandled Exception: {e}")
+            except Exception:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="An unexpected error occurred while processing your request. Please try again later.",
