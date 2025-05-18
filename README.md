@@ -207,11 +207,11 @@ The API will be available at `http://localhost:8000`. Additionally, the swagger 
   ```
 - **Performance Results (Kubernetes):**
   - 5000 requests, 50 concurrent, 0 failures
-  - Avg response: 78.9 ms, 95th percentile: 158 ms
+  - Avg response: 79.7 ms, 95th percentile: 167 ms
 
 - **Performance Results (Docker Compose):**
   - 5000 requests, 50 concurrent, 0 failures
-  - Avg response: 92.2 ms, 95th percentile: 218.1 ms
+  - Avg response: 74.8 ms, 95th percentile: 158.7 ms
 
 ---
 
