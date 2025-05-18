@@ -58,7 +58,10 @@ async def test_search_media_success(
     request = get_test_params()
     response = await service.search_media(request)
     assert response.total_results == 1
-    assert response.results[0]["media_url"] == "https://www.imago-images.de/bild/st/0000000123/s.jpg"
+    assert (
+        response.results[0]["media_url"]
+        == "https://www.imago-images.de/bild/st/0000000123/s.jpg"
+    )
 
 
 @pytest.mark.asyncio
