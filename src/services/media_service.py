@@ -1,5 +1,6 @@
 import logging
 import json
+import hashlib
 from datetime import datetime
 
 from src.es.handler import ElasticsearchHandler
@@ -60,7 +61,7 @@ class MediaSearchService:
         try:
             self._validate_search_request(search_request)
 
-            cache_key = f"media_search:{hash(str(search_request.model_dump()))}"
+            cache_key = self._make_cache_key(search_request)
             cached_response = await self.redis_handler.get(cache_key)
             if cached_response:
                 self.logger.info("Cache hit for search request.")
@@ -71,13 +72,16 @@ class MediaSearchService:
             total_results = es_response["hits"]["total"]["value"]
             results = es_response["hits"]["hits"]
 
-            processed_results = []
-            for hit in results:
-                source = hit["_source"]
-                hit["media_url"] = self._generate_image_url(
-                    source.get("db"), source.get("bildnummer")
-                )
-                processed_results.append(hit)
+            # Use list comprehension to process results
+            processed_results = [
+                {
+                    **hit,
+                    "media_url": self._generate_image_url(
+                        hit["_source"].get("db"), hit["_source"].get("bildnummer")
+                    ),
+                }
+                for hit in results
+            ]
 
             response = ResponseBody(
                 total_results=total_results,
@@ -99,6 +103,22 @@ class MediaSearchService:
             self.logger.error(f"Error during media search: {e}")
             raise
 
+    def _make_cache_key(self, search_request: RequestBody) -> str:
+        """
+        Generate Cache Key
+        -------------
+        Generate a unique and stable cache key based on the search request parameters.
+
+        Args:
+            search_request (MediaSearchRequest): The search parameters to generate the cache key from.
+
+        Returns:
+            str: The generated cache key.
+        """
+        dumped = json.dumps(search_request.model_dump(mode="json"), sort_keys=True)
+        h = hashlib.blake2b(dumped.encode(), digest_size=16).hexdigest()
+        return f"media_search:{h}"
+
     def _validate_search_request(self, search_request: RequestBody):
         """
         Validate Search Request
@@ -115,7 +135,7 @@ class MediaSearchService:
             self.logger.error("At least one field is required.")
             raise ValueError("At least one field is required.")
 
-        valid_fields = Field.__members__.values()
+        valid_fields = set(Field.__members__.values())  # Convert to O(1) lookup
         for field in search_request.fields:
             if field not in valid_fields:
                 self.logger.error(f"Invalid field: {field}")
