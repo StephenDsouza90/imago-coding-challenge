@@ -24,7 +24,7 @@ class RedisHandler:
         self.client = client
         self.logger = logger
 
-    def set(self, key: str, value: str, expire: int = 3600):
+    async def set(self, key: str, value: str, expire: int = 3600):
         """
         Set
         -------------
@@ -37,13 +37,12 @@ class RedisHandler:
             expire (int): The expiration time in seconds. Default is 3600 seconds (1 hour).
         """
         try:
-            self.client.client.set(key, value, ex=expire)
-
+            await self.client.client.set(key, value, ex=expire)
         except Exception as e:
             self.logger.error(f"Failed to set key {key} in Redis: {e}")
             # NOTE: Not raising an exception here to avoid breaking the application flow.
 
-    def get(self, key: str) -> Optional[str]:
+    async def get(self, key: str) -> Optional[str]:
         """
         Get
         -------------
@@ -57,8 +56,7 @@ class RedisHandler:
             Optional[str]: The value associated with the key.
         """
         try:
-            return self.client.client.get(key)
-
+            return await self.client.client.get(key)
         except Exception as e:
             self.logger.error(f"Failed to get key {key} from Redis: {e}")
             # NOTE: Not raising an exception here to avoid breaking the application flow.

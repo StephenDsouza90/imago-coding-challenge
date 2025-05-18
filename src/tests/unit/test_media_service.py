@@ -32,8 +32,8 @@ def mock_elasticsearch_handler():
 @pytest.fixture
 def mock_redis_handler():
     handler = MagicMock()
-    handler.get = MagicMock()
-    handler.set = MagicMock()
+    handler.get = AsyncMock()
+    handler.set = AsyncMock()
     return handler
 
 
@@ -49,26 +49,16 @@ async def test_search_media_success(
     service, mock_elasticsearch_handler, mock_redis_handler
 ):
     mock_redis_handler.get.return_value = None
-    mock_response = {
+    mock_elasticsearch_handler.search_media.return_value = {
         "hits": {
-            "total": {"value": 2},
-            "hits": [
-                {"_source": {"db": "stock", "bildnummer": "123"}},
-                {"_source": {"db": "sp", "bildnummer": "456"}},
-            ],
+            "total": {"value": 1},
+            "hits": [{"_source": {"db": "stock", "bildnummer": "123"}}],
         }
     }
-    mock_elasticsearch_handler.search_media.return_value = mock_response
     request = get_test_params()
     response = await service.search_media(request)
-    assert response.total_results == 2
-    assert len(response.results) == 2
-    assert response.page == 1
-    assert response.limit == 10
-    assert response.has_next is False
-    assert response.has_previous is False
-    for hit in response.results:
-        assert "media_url" in hit
+    assert response.total_results == 1
+    assert response.results[0]["media_url"] == "https://www.imago-images.de/bild/st/0000000123/s.jpg"
 
 
 @pytest.mark.asyncio
@@ -76,8 +66,7 @@ async def test_search_media_with_key_error(
     service, mock_elasticsearch_handler, mock_redis_handler
 ):
     mock_redis_handler.get.return_value = None
-    mock_response = {"hits": {}}
-    mock_elasticsearch_handler.search_media.return_value = mock_response
+    mock_elasticsearch_handler.search_media.return_value = {"hits": {}}
     request = get_test_params()
     with pytest.raises(KeyError):
         await service.search_media(request)

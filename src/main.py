@@ -98,18 +98,24 @@ def init_es_client(app: FastAPI, host: str, port: int, username: str, password: 
         raise Exception("Elasticsearch client connection failed.")
 
 
-def init_redis_client(app: FastAPI, host: str, port: int, username: str, password: str):
+async def init_redis_client(
+    app: FastAPI, host: str, port: int, username: str, password: str
+):
     """
     Initialize the Redis client and store it in the application state.
 
     Args:
         app (FastAPI): The FastAPI application instance.
+        host (str): The Redis host.
+        port (int): The Redis port.
+        username (str): The Redis username.
+        password (str): The Redis password.
     """
     app.state.logger.info("Initializing Redis client and handler...")
-    app.state.redis_client = RedisClient(host, port, username, password)
 
     try:
-        app.state.redis_client.connect()
+        app.state.redis_client = RedisClient(host, port, username, password)
+        await app.state.redis_client.connect()
         app.state.redis_handler = RedisHandler(app.state.redis_client, app.state.logger)
     except Exception as e:
         app.state.logger.error(f"Failed to connect to Redis: {e}")
@@ -177,8 +183,10 @@ def create_app() -> FastAPI:
             load_and_validate_redis_env(app)
         )
 
-        # Initialize Redis client
-        init_redis_client(app, redis_host, redis_port, redis_username, redis_password)
+        # Initialize Redis client and handler before using them
+        await init_redis_client(
+            app, redis_host, redis_port, redis_username, redis_password
+        )
 
         # Initialize MediaSearchService
         init_media_search_service(app)
@@ -188,6 +196,8 @@ def create_app() -> FastAPI:
         app.state.logger.info("Shutting down the application...")
         await app.state.es_client.close()
         app.state.logger.info("Elasticsearch client closed.")
+        await app.state.redis_client.disconnect()
+        app.state.logger.info("Redis client closed.")
 
     # Create FastAPI application
     logger = init_logger()

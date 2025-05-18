@@ -1,5 +1,6 @@
-import redis
-import time
+import asyncio
+
+import redis.asyncio as redis
 
 
 class RedisClient:
@@ -35,7 +36,7 @@ class RedisClient:
         self.password = password
         self.client = None
 
-    def connect(self, max_retries: int = 3, delay: int = 2):
+    async def connect(self, max_retries: int = 3, delay: int = 2):
         """
         Connect
         -------------
@@ -50,27 +51,27 @@ class RedisClient:
         """
         for attempt in range(1, max_retries + 1):
             try:
-                self.client = redis.StrictRedis(
+                self.client = redis.Redis(
                     host=self.host,
                     port=self.port,
                     username=self.username,
                     password=self.password,
                     db=self.db,
                 )
-                self.client.ping()
+                await self.client.ping()
                 break  # Success, exit loop
             except redis.ConnectionError as e:
                 if attempt == max_retries:
                     raise ConnectionError(
                         f"Failed to connect to Redis server at {self.host}:{self.port} after {max_retries} attempts: {e}"
                     )
-            time.sleep(delay)
+            await asyncio.sleep(delay)
 
-    def disconnect(self):
+    async def disconnect(self):
         """
         Disconnect
         -------------
         Close the connection to the Redis server if it exists.
         """
         if self.client:
-            self.client.close()
+            await self.client.close()
