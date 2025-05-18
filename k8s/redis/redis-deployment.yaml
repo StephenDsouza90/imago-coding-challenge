@@ -36,7 +36,7 @@ spec:
               memory: "256Mi"
               cpu: "500m"
           command: ["sh", "-c"]
-          args:
+          args: # Create the ACL file and start Redis with it
             - |
               mkdir -p /usr/local/etc/redis && \
               echo "user $REDIS_USERNAME on >$REDIS_PASSWORD ~* +@all" > /usr/local/etc/redis/users.acl && \

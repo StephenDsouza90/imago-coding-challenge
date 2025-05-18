@@ -5,12 +5,12 @@
 
 ### 2. Elasticsearch Integration
 - [x] Implement connection to test Elasticsearch server
-- [x] Create search function with basic query capabilities
+- [x] Create search function with query capabilities
 - [x] Implement media URL construction logic (padding zeros, DB value handling)
 - [x] Handle potential connection errors and timeouts
 
 ### 3. API Endpoints
-- [x] Design RESTful endpoint `/search` (GET) - Keyword search and advance filtering
+- [x] Design RESTful endpoint (GET) `/api/media/search`
 - [x] Add pagination support for search results
 - [x] Implement health check endpoint (`/health`)
 
@@ -20,25 +20,20 @@
 - [x] Handle missing/empty fields gracefully
 - [x] Add field mapping for better searchability
 - [x] Implement request validation with Pydantic models
-- [x] Use async / await keyword
-- [ ] Improve searchability / data quality (handle mis-spelling or use regex)
 
 ### 5. Error Handling
 - [x] Implement custom exception handling
 - [x] Create proper HTTP error responses
-- [x] Log errors for debugging
 - [x] Handle Elasticsearch-specific errors
-- [ ] Implement retry logic and fallback mechanisms
+- [x] Implement retry logic
 
 ### 6. Testing
-- [x] Write unit tests for core functions (URL generation, query building)
+- [x] Write unit tests for core functions
 - [x] Injection attacks / input sanitization
-- [x] Mock Elasticsearch responses for testing
 - [x] Write end-to-end tests for API endpoints
-- [x] Performance test
+- [x] Write performance tests for API endpoints
 
-### 7. Monitoring, Logging & Caching
-- [ ] Monitoring: Add performance metrics for search queries
+### 7. Logging & Caching
 - [x] Logging: Set up basic request logging
 - [x] Caching: Implement caching
 
@@ -50,25 +45,20 @@
 
 ### 9. Documentation
 - [x] Write API documentation (OpenAPI/Swagger via FastAPI)
-- [x] Create README with:
-  - Setup instructions
-  - API usage examples
-  - Known limitations
+- [x] Create README
 
 ### 10. Problem Identification & Solution
 - [x] Identify at least one key issue
 - [x] Document the problem and its impact
 - [x] Propose solution with justification
 
-### 11. Scalability, Maintainability & Security
+### 11. Scalability & Maintainability
 - [x] Handle large volume of data
 - [x] New provider and media
-- [x] Connection pooling
 
 ### 12. Final Review
 - [x] Check TODOs
-- [ ] Code quality check
-- [ ] Add code comments for complex logic
+- [x] Code quality check
+- [x] Verify all requirements are addressed
 - [ ] Remove all passwords before final deployment
-- [ ] Verify all requirements are addressed
 - [ ] Prepare submission package

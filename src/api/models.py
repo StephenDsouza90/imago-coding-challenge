@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional, List
+
 from pydantic import BaseModel, Field as PydanticField, ConfigDict
 
 
@@ -62,13 +63,22 @@ class Match(str, Enum):
     PHRASE_PREFIX = "phrase_prefix"
 
 
+class PageNumber:
+    """
+    Default page number for pagination.
+    """
+
+    DEFAULT: int = 1
+
+
 class RequestBody(BaseModel):
     """
     Request body for searching media items.
     """
 
     keyword: str = PydanticField(
-        ...,
+        ...,  # Required field
+        title="Keyword",
         description="Search keyword.",
         min_length=2,
         max_length=100,
@@ -76,58 +86,80 @@ class RequestBody(BaseModel):
     )
     fields: List[str] = PydanticField(
         default_factory=lambda: [Field.KEYWORD],
+        title="Fields",
         description="Fields to search in. Supported: suchtext, fotografen.",
     )
     match: Match = PydanticField(
         Match.WORDS,
+        title="Match Type",
         description="Match type for search. Supported: best_fields, most_fields, cross_fields, phrase, phrase_prefix.",
     )
     limit: Limit = PydanticField(
         Limit.SMALL,
+        title="Limit",
         description="Number of results per page. Supported: 5, 10, 20, 50, 100.",
+        le=Limit.MAX.value,  # Ensure limit is less than or equal to the maximum limit
     )
-    page: int = PydanticField(1, description="Page number for pagination.", ge=1)
+    page: int = PydanticField(
+        PageNumber.DEFAULT,
+        title="Page",
+        description="Page number for pagination.",
+        ge=PageNumber.DEFAULT,  # Ensure page number is greater than or equal to 1
+    )
     sort_by: SortField = PydanticField(
         SortField.DATE,
+        title="Sort By",
         description="Field to sort results by. Supported: datum, breite, hoehe.",
     )
     order_by: SortOrder = PydanticField(
         SortOrder.DESC,
+        title="Order By",
         description="Sort order (ascending/descending). Supported: asc, desc.",
     )
     date_from: Optional[str] = PydanticField(
         None,
+        title="Date From",
         description="Start date filter (YYYY-MM-DD).",
         pattern=r"^\d{4}-\d{2}-\d{2}$",  # Regex to validate date format (YYYY-MM-DD)
     )
     date_to: Optional[str] = PydanticField(
         None,
+        title="Date To",
         description="End date filter (YYYY-MM-DD).",
         pattern=r"^\d{4}-\d{2}-\d{2}$",  # Regex to validate date format (YYYY-MM-DD)
     )
     height_min: Optional[int] = PydanticField(
-        None, description="Minimum height filter.", ge=0
+        None,
+        title="Height Min",
+        description="Minimum height filter.",
+        ge=0,  # Ensure height is non-negative
     )
     height_max: Optional[int] = PydanticField(
-        None, description="Maximum height filter.", ge=0
+        None,
+        title="Height Max",
+        description="Maximum height filter.",
+        ge=0,  # Ensure height is non-negative
     )
     width_min: Optional[int] = PydanticField(
-        None, description="Minimum width filter.", ge=0
+        None,
+        title="Width Min",
+        description="Minimum width filter.",
+        ge=0,  # Ensure width is non-negative
     )
     width_max: Optional[int] = PydanticField(
-        None, description="Maximum width filter.", ge=0
+        None, title="Width Max", description="Maximum width filter.", ge=0
     )
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "keyword": "nature",
-                "fields": ["suchtext", "fotografen"],
-                "match": ["phrase"],
-                "limit": 10,
+                "fields": [Field.KEYWORD.value, Field.PHOTOGRAPHER.value],
+                "match": [Match.WORDS.value],
+                "limit": Limit.SMALL.value,
                 "page": 1,
-                "sort_by": "datum",
-                "order_by": "asc",
+                "sort_by": SortField.DATE.value,
+                "order_by": SortOrder.DESC.value,
                 "date_from": "2024-01-01",
                 "date_to": "2024-12-31",
                 "height_min": 500,
@@ -145,14 +177,34 @@ class ResponseBody(BaseModel):
     """
 
     total_results: int = PydanticField(
-        ..., description="Total number of results found."
+        ...,  # Required field
+        title="Total Results",
+        description="Total number of results found.",
     )
-    results: List[dict] = PydanticField(..., description="List of media items.")
-    page: int = PydanticField(..., description="Current page number.")
-    limit: int = PydanticField(..., description="Number of results per page.")
-    has_next: bool = PydanticField(..., description="Whether there is a next page.")
+    results: List[dict] = PydanticField(
+        ...,  # Required field
+        title="Results",
+        description="List of media items.",
+    )
+    page: int = PydanticField(
+        ...,  # Required field
+        title="Page",
+        description="Current page number.",
+    )
+    limit: int = PydanticField(
+        ...,  # Required field
+        title="Limit",
+        description="Number of results per page.",
+    )
+    has_next: bool = PydanticField(
+        ...,  # Required field
+        title="Has Next",
+        description="Whether there is a next page.",
+    )
     has_previous: bool = PydanticField(
-        ..., description="Whether there is a previous page."
+        ...,  # Required field
+        title="Has Previous",
+        description="Whether there is a previous page.",
     )
 
     model_config = ConfigDict(

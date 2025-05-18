@@ -3,6 +3,17 @@ from elasticsearch.exceptions import BadRequestError, TransportError, Connection
 
 
 def map_service_exception(exc: Exception) -> HTTPException:
+    """
+    Maps service exceptions to HTTP exceptions.
+    -------------
+    This function takes an exception as input and maps it to an appropriate HTTPException with a specific status code and detail message.
+
+    Args:
+        exc (Exception): The exception to be mapped.
+
+    Returns:
+        HTTPException: The mapped HTTPException with a status code and detail message.
+    """
     if isinstance(exc, AssertionError):
         return HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

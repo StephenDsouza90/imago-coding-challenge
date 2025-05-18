@@ -132,11 +132,11 @@ Health check endpoint.
 
 ## Setup & Running
 ### Prerequisites
-- Docker
-- Docker Compose
-- Minikube
-- Kubectl
-- Python 3.12+ (for manual run)
+- **Docker:** 28.1.1
+- **Docker Compose:** 2.35.1-desktop.1
+- **Minikube:** 1.35.0
+- **kubectl:** v1.32.2
+- **Python:** 3.12 (for manual run)
 - Access to the provided Elasticsearch server
 
 ### 1. Clone the repository
@@ -178,6 +178,8 @@ minikube start
 docker build -t imago:latest -f Dockerfile .
 minikube image load imago:latest
 kubectl apply -f k8s/redis
+# Wait for redis pod to start (READY should be 1/1)
+kubectl get pods
 kubectl apply -f k8s/backend
 kubectl port-forward service/backend 8000:8000
 ```

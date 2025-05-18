@@ -190,6 +190,7 @@ def create_app() -> FastAPI:
 
         # Initialize MediaSearchService
         init_media_search_service(app)
+        logger.info("Application startup complete.")
         yield
 
         # Cleanup on shutdown
@@ -200,8 +201,6 @@ def create_app() -> FastAPI:
         app.state.logger.info("Redis client closed.")
 
     # Create FastAPI application
-    logger = init_logger()
-    logger.info("Creating FastAPI application...")
     app_instance = FastAPIClient(lifespan=lifespan)
     app = app_instance.app
 
@@ -211,5 +210,4 @@ def create_app() -> FastAPI:
 
     router_instance = Routes(get_media_search_service)
     app.include_router(router_instance.router)
-    logger.info("FastAPI application created and routes included.")
     return app

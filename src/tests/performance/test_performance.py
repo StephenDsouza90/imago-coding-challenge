@@ -82,9 +82,10 @@ def generate_random_request_body() -> dict:
 async def test_app_performance_load():
     NUM_REQUESTS = 5000  # Adjust as needed
     CONCURRENCY = 50  # Number of concurrent requests
+
     results = []
 
-    async def send_request(client):
+    async def send_request(client: httpx.AsyncClient):
         start = time.perf_counter()
         try:
             resp = await client.get(

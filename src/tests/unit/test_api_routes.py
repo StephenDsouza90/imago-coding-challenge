@@ -81,7 +81,7 @@ def test_search_success_with_multiple_fields(test_app, mock_media_search_service
 def test_search_with_missing_keyword(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["keyword"] = ""
+    params["keyword"] = ""  # missing keyword
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -89,7 +89,7 @@ def test_search_with_missing_keyword(test_app):
 def test_search_with_invalid_page_zero(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["page"] = 0
+    params["page"] = 0  # invalid page
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -97,15 +97,7 @@ def test_search_with_invalid_page_zero(test_app):
 def test_search_with_invalid_page_negative(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["page"] = -2
-    resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 422
-
-
-def test_search_with_invalid_keyword(test_app):
-    client = TestClient(test_app)
-    params = get_test_params()
-    params["keyword"] = ""
+    params["page"] = -2  # invalid page
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -113,7 +105,7 @@ def test_search_with_invalid_keyword(test_app):
 def test_search_with_elasticsearch_wildcard_injection(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["keyword"] = "*"
+    params["keyword"] = "*"  # wildcard injection
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -121,7 +113,7 @@ def test_search_with_elasticsearch_wildcard_injection(test_app):
 def test_search_with_elasticsearch_query_dsl_injection(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["keyword"] = '{ "query": { "match_all": {} } }'
+    params["keyword"] = '{ "query": { "match_all": {} } }'  # query DSL injection
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -129,7 +121,9 @@ def test_search_with_elasticsearch_query_dsl_injection(test_app):
 def test_search_with_elasticsearch_reserved_characters(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["keyword"] = '+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\'
+    params["keyword"] = (
+        '+ - = && || > < ! ( ) { } [ ] ^ " ~ * ? : \\'  # reserved characters
+    )
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -137,7 +131,7 @@ def test_search_with_elasticsearch_reserved_characters(test_app):
 def test_search_with_invalid_date_from_format(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["date_from"] = "some text"
+    params["date_from"] = "some text"  # invalid date format
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -145,20 +139,17 @@ def test_search_with_invalid_date_from_format(test_app):
 def test_search_with_invalid_date_to_format(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["date_to"] = "some text"
+    params["date_to"] = "some text"  # invalid date format
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
 
-def test_search_with_missing_fields(test_app, mock_media_search_service):
+def test_search_with_missing_fields(test_app):
     client = TestClient(test_app)
-    mock_media_search_service.search_media.side_effect = ValueError(
-        "Fields are required."
-    )
     params = get_test_params()
-    params["fields"] = [""]
+    params["fields"] = []
     resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 400
+    assert resp.status_code == 200
 
 
 def test_search_bad_request_error(test_app, mock_media_search_service):

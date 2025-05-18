@@ -78,7 +78,7 @@ async def test_search_media_with_key_error(
 @pytest.mark.asyncio
 async def test_search_media_invalid_field(service):
     request = get_test_params()
-    request.fields = ["Invalid Field"]
+    request.fields = ["Invalid Field"]  # Invalid field
     with pytest.raises(ValueError):
         await service.search_media(request)
 
@@ -86,7 +86,7 @@ async def test_search_media_invalid_field(service):
 @pytest.mark.asyncio
 async def test_search_media_invalid_height_range(service):
     request = get_test_params()
-    request.height_min = 2000
+    request.height_min = 2000  # Invalid height range
     request.height_max = 1000
     with pytest.raises(
         ValueError, match="height_min must be less than or equal to height_max"
@@ -97,7 +97,7 @@ async def test_search_media_invalid_height_range(service):
 @pytest.mark.asyncio
 async def test_search_media_invalid_width_range(service):
     request = get_test_params()
-    request.width_min = 2000
+    request.width_min = 2000  # Invalid width range
     request.width_max = 1000
     with pytest.raises(
         ValueError, match="width_min must be less than or equal to width_max"
@@ -108,7 +108,7 @@ async def test_search_media_invalid_width_range(service):
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_from_format(service):
     request = get_test_params()
-    request.date_from = "2024-01-32"
+    request.date_from = "2024-01-32"  # Invalid date format
     with pytest.raises(ValueError, match="date_from must be in YYYY-MM-DD format"):
         await service.search_media(request)
 
@@ -116,7 +116,7 @@ async def test_search_media_invalid_date_from_format(service):
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_to_format(service):
     request = get_test_params()
-    request.date_to = "2024-02-32"
+    request.date_to = "2024-02-32"  # Invalid date format
     with pytest.raises(ValueError, match="date_to must be in YYYY-MM-DD format"):
         await service.search_media(request)
 
@@ -124,7 +124,7 @@ async def test_search_media_invalid_date_to_format(service):
 @pytest.mark.asyncio
 async def test_search_media_invalid_date_range(service):
     request = get_test_params()
-    request.date_from = "2024-01-10"
+    request.date_from = "2024-01-10"  # Valid date format - higher from date
     request.date_to = "2024-01-01"
     with pytest.raises(
         ValueError, match="date_from must be less than or equal to date_to"
@@ -136,7 +136,7 @@ async def test_search_media_invalid_date_range(service):
 async def test_search_media_invalid_limit_zero(service, mock_redis_handler):
     mock_redis_handler.get.return_value = None
     request = get_test_params()
-    request.limit = 0
+    request.limit = 0  # Invalid limit
     with pytest.raises(ValueError, match="Limit must be a positive integer"):
         await service.search_media(request)
 
@@ -144,7 +144,7 @@ async def test_search_media_invalid_limit_zero(service, mock_redis_handler):
 @pytest.mark.asyncio
 async def test_search_media_invalid_limit_negative(service):
     request = get_test_params()
-    request.limit = -5
+    request.limit = -5  # Invalid limit
     with pytest.raises(ValueError, match="Limit must be a positive integer"):
         await service.search_media(request)
 
@@ -152,7 +152,7 @@ async def test_search_media_invalid_limit_negative(service):
 @pytest.mark.asyncio
 async def test_search_media_over_max_limit(service):
     request = get_test_params()
-    request.limit = Limit.MAX.value + 1
+    request.limit = Limit.MAX.value + 1  # Exceeding max limit
     with pytest.raises(ValueError, match="Limit must be a positive integer"):
         await service.search_media(request)
 
@@ -160,7 +160,7 @@ async def test_search_media_over_max_limit(service):
 @pytest.mark.asyncio
 async def test_request_body_invalid_sort(service):
     request = get_test_params()
-    request.sort_by = "invalid_sort"
+    request.sort_by = "invalid_sort"  # Invalid sort field
     with pytest.raises(ValueError, match="Invalid sort field: invalid_sort"):
         await service.search_media(request)
 
@@ -168,7 +168,7 @@ async def test_request_body_invalid_sort(service):
 @pytest.mark.asyncio
 async def test_request_body_invalid_order(service):
     request = get_test_params()
-    request.order_by = "invalid_order"
+    request.order_by = "invalid_order"  # Invalid order
     with pytest.raises(ValueError, match="Invalid order: invalid_order"):
         await service.search_media(request)
 

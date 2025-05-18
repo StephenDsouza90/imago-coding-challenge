@@ -2,7 +2,6 @@ import logging
 import json
 from datetime import datetime
 
-
 from src.es.handler import ElasticsearchHandler
 from src.cache.handler import RedisHandler
 from src.api.models import (

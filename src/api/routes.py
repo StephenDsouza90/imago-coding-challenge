@@ -31,7 +31,7 @@ class Routes:
             tags=["Health"],
             response_description="A simple status message.",
         )
-        async def health_check():
+        async def health_check() -> dict:
             """
             Health Check
             -------------
@@ -59,7 +59,9 @@ class Routes:
         )
         async def search(
             search_request: RequestBody = Query(
-                ..., description="Search parameters for media items."
+                ...,
+                title="Search Request",
+                description="Search parameters for media items.",
             ),
             media_search_service: MediaSearchService = Depends(
                 self.get_media_search_service
