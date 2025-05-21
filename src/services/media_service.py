@@ -1,17 +1,12 @@
 import logging
 import json
 import hashlib
-from datetime import datetime
 
 from src.es.handler import ElasticsearchHandler
 from src.cache.handler import RedisHandler
 from src.api.models import (
     RequestBody,
     ResponseBody,
-    Field,
-    SortOrder,
-    SortField,
-    Limit,
 )
 
 
@@ -59,8 +54,6 @@ class MediaSearchService:
             ValueError: If the keyword is not provided or is less than 2 characters long.
         """
         try:
-            self._validate_search_request(search_request)
-
             cache_key = self._make_cache_key(search_request)
             cached_response = await self.redis_handler.get(cache_key)
             if cached_response:
@@ -118,86 +111,6 @@ class MediaSearchService:
         dumped = json.dumps(search_request.model_dump(mode="json"), sort_keys=True)
         h = hashlib.blake2b(dumped.encode(), digest_size=16).hexdigest()
         return f"media_search:{h}"
-
-    def _validate_search_request(self, search_request: RequestBody):
-        """
-        Validate Search Request
-        -------------
-        Validate the search parameters.
-
-        Args:
-            search_request (MediaSearchRequest): The search parameters to validate.
-
-        Raises:
-            ValueError: If any of the parameters are invalid
-        """
-        if not search_request.fields:
-            self.logger.error("At least one field is required.")
-            raise ValueError("At least one field is required.")
-
-        valid_fields = set(Field.__members__.values())  # Convert to O(1) lookup
-        for field in search_request.fields:
-            if field not in valid_fields:
-                self.logger.error(f"Invalid field: {field}")
-                raise ValueError(f"Invalid field: {field}")
-
-        if search_request.limit <= 0 or search_request.limit > Limit.MAX.value:
-            self.logger.error("Limit must be a positive integer.")
-            raise ValueError("Limit must be a positive integer.")
-
-        if search_request.sort_by not in SortField.__members__.values():
-            self.logger.error(f"Invalid sort field: {search_request.sort_by}")
-            raise ValueError(f"Invalid sort field: {search_request.sort_by}")
-
-        if search_request.order_by not in SortOrder.__members__.values():
-            self.logger.error(f"Invalid order: {search_request.order_by}")
-            raise ValueError(f"Invalid order: {search_request.order_by}")
-
-        if search_request.date_from and search_request.date_to:
-            if search_request.date_from > search_request.date_to:
-                self.logger.error("date_from must be less than or equal to date_to.")
-                raise ValueError("date_from must be less than or equal to date_to.")
-
-        if search_request.date_from and not self._is_valid_date(
-            search_request.date_from
-        ):
-            self.logger.error("date_from must be in YYYY-MM-DD format.")
-            raise ValueError("date_from must be in YYYY-MM-DD format.")
-
-        if search_request.date_to and not self._is_valid_date(search_request.date_to):
-            self.logger.error("date_to must be in YYYY-MM-DD format.")
-            raise ValueError("date_to must be in YYYY-MM-DD format.")
-
-        if search_request.height_min and search_request.height_max:
-            if search_request.height_min > search_request.height_max:
-                self.logger.error(
-                    "height_min must be less than or equal to height_max."
-                )
-                raise ValueError("height_min must be less than or equal to height_max.")
-
-        if search_request.width_min and search_request.width_max:
-            if search_request.width_min > search_request.width_max:
-                self.logger.error("width_min must be less than or equal to width_max.")
-                raise ValueError("width_min must be less than or equal to width_max.")
-
-    def _is_valid_date(self, date_str: str) -> bool:
-        """
-        Validate Date Format
-        -------------
-        Validate if the date string is in YYYY-MM-DD format.
-
-        Args:
-            date_str (str): The date string to validate.
-
-        Returns:
-            bool: True if the date string is valid, False otherwise.
-        """
-        try:
-            datetime.strptime(date_str, "%Y-%m-%d")
-            return True
-        except ValueError:
-            self.logger.error(f"Invalid date format: {date_str}")
-            return False
 
     def _generate_image_url(
         self,

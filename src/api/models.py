@@ -1,7 +1,8 @@
 from enum import Enum
 from typing import Optional, List
+from datetime import datetime
 
-from pydantic import BaseModel, Field as PydanticField, ConfigDict
+from pydantic import BaseModel, Field as PydanticField, ConfigDict, model_validator
 
 
 class Field(str, Enum):
@@ -98,6 +99,7 @@ class RequestBody(BaseModel):
         Limit.SMALL,
         title="Limit",
         description="Number of results per page. Supported: 5, 10, 20, 50, 100.",
+        ge=1,  # Ensure limit is a positive integer
         le=Limit.MAX.value,  # Ensure limit is less than or equal to the maximum limit
     )
     page: int = PydanticField(
@@ -147,8 +149,51 @@ class RequestBody(BaseModel):
         ge=0,  # Ensure width is non-negative
     )
     width_max: Optional[int] = PydanticField(
-        None, title="Width Max", description="Maximum width filter.", ge=0
+        None,
+        title="Width Max",
+        description="Maximum width filter.",
+        ge=0,  # Ensure width is non-negative
     )
+
+    @model_validator(mode="after")
+    def check_min_max(self) -> "RequestBody":
+        if self.height_min and self.height_max:
+            if self.height_min > self.height_max:
+                raise ValueError("height_min must be less than or equal to height_max.")
+
+        if self.width_min and self.width_max:
+            if self.width_min > self.width_max:
+                raise ValueError("width_min must be less than or equal to width_max.")
+        return self
+
+    @model_validator(mode="after")
+    def check_date_range(self) -> "RequestBody":
+        if self.date_from and self.date_to:
+            if self.date_from > self.date_to:
+                raise ValueError("date_from must be less than or equal to date_to.")
+
+        return self
+
+    @model_validator(mode="after")
+    def check_date_format(self) -> "RequestBody":
+        if self.date_from and not is_valid_date(self.date_from):
+            raise ValueError("date_from must be in YYYY-MM-DD format.")
+
+        if self.date_to and not is_valid_date(self.date_to):
+            raise ValueError("date_to must be in YYYY-MM-DD format.")
+
+        return self
+
+    @model_validator(mode="after")
+    def check_fields(self) -> "RequestBody":
+        valid_fields = {Field.KEYWORD.value, Field.PHOTOGRAPHER.value}
+        for field in self.fields:
+            if field not in valid_fields:
+                raise ValueError(
+                    f"Invalid field: {field}. Supported fields: {valid_fields}"
+                )
+
+        return self
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -169,6 +214,25 @@ class RequestBody(BaseModel):
             }
         }
     )
+
+
+def is_valid_date(date_str: str) -> bool:
+    """
+    Validate Date Format
+    -------------
+    Validate if the date string is in YYYY-MM-DD format.
+
+    Args:
+        date_str (str): The date string to validate.
+
+    Returns:
+        bool: True if the date string is valid, False otherwise.
+    """
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+        return True
+    except ValueError:
+        return False
 
 
 class ResponseBody(BaseModel):

@@ -75,9 +75,26 @@ async def test_media_search_success_with_invalid_date():
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
-            "detail": "The search request has a bad value. Please check your parameters and try again."
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["query"],
+                    "msg": "Value error, date_from must be in YYYY-MM-DD format.",
+                    "input": {
+                        "keyword": "sunset",
+                        "fields": ["suchtext"],
+                        "match": "best_fields",
+                        "limit": "5",
+                        "page": "1",
+                        "sort_by": "hoehe",
+                        "order_by": "desc",
+                        "date_from": "2023-13-01",
+                    },
+                    "ctx": {"error": {}},
+                }
+            ]
         }
 
 
@@ -128,9 +145,31 @@ async def test_media_search_success_with_invalid_height_and_width():
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
-            "detail": "The search request has a bad value. Please check your parameters and try again."
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["query"],
+                    "msg": "Value error, height_min must be less than or equal to height_max.",
+                    "input": {
+                        "keyword": "mercedes",
+                        "fields": ["suchtext"],
+                        "match": "best_fields",
+                        "limit": "5",
+                        "page": "1",
+                        "sort_by": "datum",
+                        "order_by": "asc",
+                        "date_from": "2023-01-01",
+                        "date_to": "2024-12-31",
+                        "height_min": "3000",
+                        "height_max": "1000",
+                        "width_min": "5000",
+                        "width_max": "1000",
+                    },
+                    "ctx": {"error": {}},
+                }
+            ]
         }
 
 
@@ -172,9 +211,25 @@ async def test_media_search_invalid_field():
     }
     async with httpx.AsyncClient(base_url=BASE_URL) as client:
         resp = await client.get("/api/media/search", params=params)
-        assert resp.status_code == 400
+        assert resp.status_code == 422
         assert resp.json() == {
-            "detail": "The search request has a bad value. Please check your parameters and try again."
+            "detail": [
+                {
+                    "type": "value_error",
+                    "loc": ["query"],
+                    "msg": "Value error, Invalid field: invalid field. Supported fields: {'suchtext', 'fotografen'}",
+                    "input": {
+                        "keyword": "sunset",
+                        "fields": ["invalid field"],
+                        "match": "best_fields",
+                        "limit": "5",
+                        "page": "1",
+                        "sort_by": "datum",
+                        "order_by": "asc",
+                    },
+                    "ctx": {"error": {}},
+                }
+            ]
         }
 
 

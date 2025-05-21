@@ -7,7 +7,14 @@ from fastapi import FastAPI
 from elasticsearch.exceptions import BadRequestError, TransportError, ConnectionError
 
 from src.api.routes import Routes
-from src.api.models import ResponseBody, Field, SortField, SortOrder, Limit
+from src.api.models import (
+    ResponseBody,
+    Field,
+    SortField,
+    SortOrder,
+    Limit,
+    is_valid_date,
+)
 
 
 def get_test_params() -> dict:
@@ -71,7 +78,7 @@ def test_search_success_with_multiple_fields(test_app, mock_media_search_service
         has_previous=False,
     )
     params = get_test_params()
-    params["fields"] = [Field.KEYWORD, Field.PHOTOGRAPHER]
+    params["fields"] = [Field.KEYWORD.value, Field.PHOTOGRAPHER.value]
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 200
     assert resp.json()["total_results"] == 2
@@ -128,10 +135,45 @@ def test_search_with_elasticsearch_reserved_characters(test_app):
     assert resp.status_code == 422
 
 
+def test_search_with_missing_fields(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["fields"] = []
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 200
+
+
+def test_search_with_invalid_width_range(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["width_min"] = 2000  # Invalid width range
+    params["width_max"] = 1000
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_search_with_invalid_height_range(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["height_min"] = 2000  # Invalid width range
+    params["height_max"] = 1000
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_search_with_invalid_date_range(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["date_from"] = "2024-01-10"  # Valid date format - higher from date
+    params["date_to"] = "2024-01-01"
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
 def test_search_with_invalid_date_from_format(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["date_from"] = "some text"  # invalid date format
+    params["date_from"] = "2024-01-32"  # Invalid date format
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
@@ -139,17 +181,63 @@ def test_search_with_invalid_date_from_format(test_app):
 def test_search_with_invalid_date_to_format(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["date_to"] = "some text"  # invalid date format
+    params["date_to"] = "2024-02-32"  # Invalid date format
     resp = client.get("/api/media/search", params=params)
     assert resp.status_code == 422
 
 
-def test_search_with_missing_fields(test_app):
+def test_is_valid_date():
+    assert is_valid_date("2024-01-01")
+    assert not is_valid_date("2024-13-01")
+    assert not is_valid_date("bad-date")
+
+
+def test_search_with_over_max_limit(test_app):
     client = TestClient(test_app)
     params = get_test_params()
-    params["fields"] = []
+    params["limit"] = Limit.MAX.value + 1  # Exceeding max limit
     resp = client.get("/api/media/search", params=params)
-    assert resp.status_code == 200
+    assert resp.status_code == 422
+
+
+def test_search_with_invalid_limit_negative(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["limit"] = -5  # Invalid limit
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_search_with_invalid_limit_zero(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["limit"] = 0  # Invalid limit
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_request_body_invalid_sort(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["sort_by"] = "invalid_sort"  # Invalid sort field
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_request_body_invalid_order(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["order_by"] = "invalid_order"  # Invalid order
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
+
+
+def test_search_with_invalid_field(test_app):
+    client = TestClient(test_app)
+    params = get_test_params()
+    params["fields"] = ["Invalid Field"]  # Invalid field
+    resp = client.get("/api/media/search", params=params)
+    assert resp.status_code == 422
 
 
 def test_search_bad_request_error(test_app, mock_media_search_service):
