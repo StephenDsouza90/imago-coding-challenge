@@ -41,7 +41,7 @@ MediaSearchAPI is a robust Python backend service designed to retrieve and serve
 - **Kubernetes**: Uses multiple backend pod replicas for scalability and high availability.
 
 ### System / App Design
-![design](assets/images/imago-design.png)
+![design](assets/images/app-design.png)
 
 - **LB (Load Balancer)**: Load balances requests across multiple backend pods (replicas).
 - **Replicas**: Multiple backend pods ensure high availability and scalability (see `k8s/backend/backend-deployment.yaml`).
@@ -141,8 +141,8 @@ Health check endpoint.
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/StephenDsouza90/imago-coding-challenge
-cd imago-coding-challenge
+git clone https://github.com/StephenDsouza90/media-search-api
+cd media-search-api
 ```
 
 ### 2. Configure Environment Variables
@@ -175,8 +175,8 @@ docker-compose up --build -d
 ### 4. Run with Kubernetes (minikube example)
 ```bash
 minikube start
-docker build -t imago:latest -f Dockerfile .
-minikube image load imago:latest
+docker build -t app:latest -f Dockerfile .
+minikube image load app:latest
 kubectl apply -f k8s/redis
 # Wait for redis pod to start (READY should be 1/1)
 kubectl get pods

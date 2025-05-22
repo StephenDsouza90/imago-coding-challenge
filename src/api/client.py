@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 class FastAPIClient:
     """
-    FastAPIClient initializes and configures the FastAPI application for the Imago Coding Challenge API.
+    FastAPIClient initializes and configures the FastAPI application.
 
     This class sets up the FastAPI app with metadata for automatic OpenAPI documentation, including title, description, and version.
     It also configures CORS middleware to allow cross-origin requests, which is essential for frontend-backend integration during development and production.
@@ -20,9 +20,9 @@ class FastAPIClient:
             lifespan: Lifespan context manager for the FastAPI app.
         """
         self.app = FastAPI(
-            title="Imago Coding Challenge API",
+            title="Media Search API",
             description=(
-                "The Imago Coding Challenge API provides endpoints for searching and retrieving media items from an Elasticsearch backend.\n\n"
+                "The Media Search API provides endpoints for searching and retrieving media items from an Elasticsearch backend.\n\n"
                 "Features:\n"
                 "- Advanced search with filters and sorting\n"
                 "- Pagination support\n"

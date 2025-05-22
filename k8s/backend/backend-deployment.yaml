@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: imago:latest
+          image: app:latest
           imagePullPolicy: Never # Forces use of local image
           ports:
             - containerPort: 8000
