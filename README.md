@@ -196,14 +196,23 @@ The API will be available at `http://localhost:8000`. Additionally, the swagger 
 - **Unit tests:**
   ```bash
   pytest src/tests/unit/
+
+  # With docker
+  docker-compose exec backend pytest src/tests/unit/
   ```
 - **E2E tests:** A running App is required. 
   ```bash
   pytest src/tests/e2e/
+
+  # With docker
+  docker-compose exec backend pytest src/tests/e2e/
   ```
 - **Performance tests:** A running App is required.
   ```bash
   pytest -s src/tests/performance/
+
+  # With docker
+  docker-compose exec backend pytest -s src/tests/performance/
   ```
 - **Performance Results (Kubernetes):**
   - 5000 requests, 50 concurrent, 0 failures
