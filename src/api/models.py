@@ -72,6 +72,16 @@ class PageNumber:
     DEFAULT: int = 1
 
 
+class Alignment(str, Enum):
+    """
+    Enumeration of alignment options for media items.
+    """
+
+    LANDSCAPE = "landscape"
+    PORTRAIT = "portrait"
+    SQUARE = "square"
+
+
 class RequestBody(BaseModel):
     """
     Request body for searching media items.
@@ -154,6 +164,11 @@ class RequestBody(BaseModel):
         description="Maximum width filter.",
         ge=0,  # Ensure width is non-negative
     )
+    alignment: Optional[Alignment] = PydanticField(
+        None,
+        title="Alignment",
+        description="Alignment of the media item. Supported: landscape, portrait, square.",
+    )
 
     @model_validator(mode="after")
     def check_min_max(self) -> "RequestBody":
@@ -211,6 +226,7 @@ class RequestBody(BaseModel):
                 "height_max": 2000,
                 "width_min": 800,
                 "width_max": 3000,
+                "alignment": "landscape",
             }
         }
     )

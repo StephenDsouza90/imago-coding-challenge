@@ -3,7 +3,7 @@ from typing import Optional, Union, List
 
 from elastic_transport import ObjectApiResponse
 
-from src.api.models import RequestBody, SortField
+from src.api.models import RequestBody, SortField, Alignment
 from src.es.client import ElasticsearchClient
 from src.es.consts import INDEX
 
@@ -161,7 +161,52 @@ class ElasticsearchHandler:
         if width_range:
             filters.append(width_range)
 
+        if search_request.alignment:
+            alignment_filter = self._get_alignment_filter(
+                search_request.alignment.value
+            )
+            if not alignment_filter:
+                self.logger.warning(
+                    f"Invalid alignment filter: {search_request.alignment.value}"
+                )
+                return filters
+
+            filters.append(
+                {
+                    "script": {
+                        "script": {
+                            "source": alignment_filter,
+                            "lang": "painless",
+                        }
+                    }
+                }
+            )
+
         return filters
+
+    def _get_alignment_filter(self, alignment: str) -> Optional[str]:
+        """
+        Get Alignment Filter
+        -------------
+        Build an alignment filter for Elasticsearch.
+
+        Args:
+            alignment (str): The alignment type (e.g., "landscape", "portrait").
+
+        Returns:
+            str: The alignment filter for Elasticsearch.
+        """
+
+        if alignment == Alignment.LANDSCAPE.value:
+            return "doc['breite'].value > doc['hoehe'].value"
+
+        elif alignment == Alignment.PORTRAIT.value:
+            return "doc['hoehe'].value > doc['breite'].value"
+
+        elif alignment == Alignment.SQUARE.value:
+            return "doc['hoehe'].value == doc['breite'].value"
+
+        return None
 
     def _build_range_filter(
         self, field: str, gte_val: Union[str, int], lte_val: Union[str, int]
