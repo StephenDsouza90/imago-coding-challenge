@@ -72,6 +72,7 @@ class MediaSearchService:
                     "media_url": self._generate_image_url(
                         hit["_source"].get("db"), hit["_source"].get("bildnummer")
                     ),
+                    "title": hit["_source"].get("suchtext", "")[:80],
                 }
                 for hit in results
             ]
